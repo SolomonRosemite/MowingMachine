@@ -74,32 +74,10 @@ namespace MowingMachine.Services
             };
         }
 
-        private static FieldType NumberToFieldType(double value)
-        {
-            var items = Enum.GetValues<FieldType>();
-            value /= items.Length;
-
-            double c = 1 / (double)items.Length;
-            for (int i = 0; i < items.Length; i++)
-            {
-                if (NumberIsBetween(value, i * c, (i + 1) * c))
-                {
-                    
-                }
-            }
-
-            throw new Exception($"Shouldn't get here. Value was {value}");
-        }
-
         private static void GenerateNoise()
         {
             
         }
-
-        // private static double DoMath()
-        // {
-        //     SimplexNoise.Noise.Calc2D(x, x, 1f);
-        // }
 
         private static bool NumberIsBetween(double numberToCheck, double bottom, double top)
         {

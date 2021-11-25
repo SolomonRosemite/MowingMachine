@@ -6,22 +6,87 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Grid Height="100" VerticalAlignment="Top">
-            <Button>Test</Button>
-        </Grid>
-
-        <Grid Margin="0,100,0,0">
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="4*" />
-                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="2.5*" />
+                <ColumnDefinition Width="1.5*" />
             </Grid.ColumnDefinitions>
 
             <Grid  Name="SimulationGrid">
             </Grid>
 
             <Grid Grid.Column="1">
-                <Button>Test</Button>
+                <StackPanel Height="100" Margin="10,10,10,0" VerticalAlignment="Top">
+                    <Label Content="MowingMachine stats" HorizontalAlignment="Center" />
+
+                    <DockPanel Margin="0,10,0,0">
+                        <Label Content="Battery Capacity kWh: "/>
+                        <TextBox Text="1.2" Height="20" />
+                    </DockPanel>
+
+                    <DockPanel Margin="0,10,0,0">
+                        <Label Content="Battery Capacity kWh: "/>
+                        <TextBox Text="1.2" Height="20" />
+                    </DockPanel>
+                </StackPanel>
+
+                <StackPanel Margin="10" VerticalAlignment="Bottom">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ProgressBar Grid.Column="1" Orientation="Vertical" Value="40" Height="200" />
+                            </Grid>
+                            
+                            <Label HorizontalAlignment="Center" Content="Charge: 40%"/>
+                        </StackPanel>
+
+
+                        <StackPanel Grid.Column="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ProgressBar Grid.Column="1" Orientation="Vertical" Value="65" Height="200" />
+                            </Grid>
+
+                            <Label HorizontalAlignment="Center" Content="Mowed lawn: 65%"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Name="StartButton" Height="30" Content="Start Simulation" />
+                </StackPanel>
             </Grid>
+
+            <!-- <Grid Grid.Column="2"> -->
+            <!--     <StackPanel Margin="10"> -->
+            <!--         <Label Content="MowingMachine settings" HorizontalAlignment="Center" /> -->
+            <!-- -->
+            <!--         <DockPanel Margin="0,10,0,0"> -->
+            <!--             <Label Content="Battery Capacity kWh: "/> -->
+            <!--             <TextBox Text="1.2" Height="20" /> -->
+            <!--         </DockPanel> -->
+            <!-- -->
+            <!--         <DockPanel Margin="0,10,0,0"> -->
+            <!--             <Label Content="Battery Capacity kWh: "/> -->
+            <!--             <TextBox Text="1.2" Height="20" /> -->
+            <!--         </DockPanel> -->
+            <!--     </StackPanel> -->
+            <!-- </Grid> -->
         </Grid>
     </Grid>
 </Window>

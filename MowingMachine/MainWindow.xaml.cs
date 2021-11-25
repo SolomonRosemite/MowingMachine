@@ -27,7 +27,7 @@ namespace MowingMachine
         {
             var (columnDefinitions, rowDefinitions) =
                 // MowingMachineService.GenerateDefinitions(3, 3);
-                MowingMachineService.GenerateDefinitions(20, 20);
+                MowingMachineService.GenerateDefinitions(10, 10);
 
             ProcessData(columnDefinitions, rowDefinitions);
         }
