@@ -6,15 +6,22 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Grid Height="100" Margin="0,0,0,0" VerticalAlignment="Top">
-            <Button>Test</Button>
-        </Grid>
-        
-        <Grid Width="500" Margin="0,100,0,0" HorizontalAlignment="Right">
+        <Grid Height="100" VerticalAlignment="Top">
             <Button>Test</Button>
         </Grid>
 
-        <Grid Name="SimulationGrid" Margin="0,100,500,0">
+        <Grid Margin="0,100,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="4*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid  Name="SimulationGrid">
+            </Grid>
+
+            <Grid Grid.Column="1">
+                <Button>Test</Button>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

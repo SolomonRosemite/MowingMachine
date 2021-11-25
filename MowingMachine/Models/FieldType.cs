@@ -5,7 +5,9 @@
         Sand,
         Grass,
         MowedLawn,
-        Cobbled,
+        CobbleStone,
         ChargingStation,
+        MowingMachine,
+        Water,
     }
 }

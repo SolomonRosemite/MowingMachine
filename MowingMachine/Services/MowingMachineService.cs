@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Xaml;
 using MowingMachine.Models;
 
 namespace MowingMachine.Services
@@ -16,7 +19,7 @@ namespace MowingMachine.Services
             var rowDefinitions = new RowDefinition [rows];
             
             for (int i = 0; i < columns; i++)
-                columnDefinitions[i] = new ColumnDefinition {Width = new GridLength(1, GridUnitType.Star)};
+                columnDefinitions[i] = new ColumnDefinition {Width = new GridLength(1, GridUnitType.Star), };
             
             for (int i = 0; i < rows; i++)
                 rowDefinitions[i] = new RowDefinition {Height = new GridLength(1, GridUnitType.Star)};
@@ -24,72 +27,49 @@ namespace MowingMachine.Services
             return (columnDefinitions, rowDefinitions);
         }
 
-        public static IEnumerable<UIElement> GetUiElements(ColumnDefinition[] columnDefinitions, RowDefinition[] rowDefinitions)
+        public static IEnumerable<UIElement> GetUiElements(ColumnDefinition[] columnDefinitions,
+            RowDefinition[] rowDefinitions)
         {
             var elements = new UIElement[columnDefinitions.Length * rowDefinitions.Length];
 
             int count = 0;
-            for (int x = 0; x < columnDefinitions.Length; x++)
+            for (int x = 0; x < rowDefinitions.Length; x++)
             {
-                for (int y = 0; y < rowDefinitions.Length; y++)
+                for (int y = 0; y < columnDefinitions.Length; y++)
                 {
-                    var rectangle = new Rectangle
+                    FieldType type = y < Enum.GetNames<FieldType>().Length ? (FieldType)y : FieldType.Water;
+                    
+                    var element = new Button
                     {
-                        Fill = new SolidColorBrush(Colors.Green),
-                        Stroke = new SolidColorBrush(Colors.Black),
-                        StrokeThickness = 1,
-                        Tag = FieldType.Grass,
+                        Content = new Image
+                        {
+                            Source = FieldTypeToItem(type),
+                            Stretch = Stretch.Fill,
+                            Tag = type,
+                        },
                     };
                     
-                    Grid.SetColumn(rectangle, y);
-                    Grid.SetRow(rectangle, x);
+                    Grid.SetRow(element, x);
+                    Grid.SetColumn(element, y);
 
-                    elements[count++] = rectangle;
+                    elements[count++] = element;
                 }
             }
 
             return elements;
         }
 
-        private static UIElement FieldTypeToItem(FieldType fieldType)
+        private static BitmapImage FieldTypeToItem(FieldType fieldType)
         {
             return fieldType switch
             {
-                FieldType.Sand => new Rectangle
-                {
-                    Fill = new SolidColorBrush(Colors.SandyBrown),
-                    Stroke = new SolidColorBrush(Colors.Black),
-                    StrokeThickness = 1,
-                    Tag = fieldType,
-                },
-                FieldType.Grass => new Rectangle
-                {
-                    Fill = new SolidColorBrush(Colors.Green),
-                    Stroke = new SolidColorBrush(Colors.Black),
-                    StrokeThickness = 1,
-                    Tag = fieldType,
-                },
-                FieldType.MowedLawn => new Rectangle
-                {
-                    Fill = new SolidColorBrush(Colors.SeaGreen),
-                    Stroke = new SolidColorBrush(Colors.Black),
-                    StrokeThickness = 1,
-                    Tag = fieldType,
-                },
-                FieldType.Cobbled => new Rectangle
-                {
-                    Fill = new SolidColorBrush(Colors.DimGray),
-                    Stroke = new SolidColorBrush(Colors.Black),
-                    StrokeThickness = 1,
-                    Tag = fieldType,
-                },
-                FieldType.ChargingStation => new Rectangle
-                {
-                    Fill = new SolidColorBrush(Colors.MediumPurple),
-                    Stroke = new SolidColorBrush(Colors.Black),
-                    StrokeThickness = 1,
-                    Tag = fieldType,
-                },
+                FieldType.Sand => GetImage("./assets/sand.png"),
+                FieldType.Grass => GetImage("./assets/grass.png"),
+                FieldType.MowedLawn => GetImage("./assets/mowed_lawn.png"),
+                FieldType.CobbleStone => GetImage("./assets/cobblestone.png"),
+                FieldType.ChargingStation => GetImage("./assets/charging_station.png"),
+                FieldType.MowingMachine => GetImage("./assets/mowing_machine.png"),
+                FieldType.Water => GetImage("./assets/water.png"),
                 _ => throw new ArgumentOutOfRangeException(nameof(fieldType), fieldType, null),
             };
         }
@@ -116,14 +96,24 @@ namespace MowingMachine.Services
             
         }
 
-        private static double DoMath()
-        {
-            SimplexNoise.Noise.Calc2D(x, x, 1f);
-        }
+        // private static double DoMath()
+        // {
+        //     SimplexNoise.Noise.Calc2D(x, x, 1f);
+        // }
 
         private static bool NumberIsBetween(double numberToCheck, double bottom, double top)
         {
             return numberToCheck >= bottom && numberToCheck <= top;
+        }
+
+        private static BitmapImage GetImage(string path)
+        {
+            var uriSource = new Uri(path, UriKind.RelativeOrAbsolute);
+            var image = new BitmapImage(uriSource);
+
+            if (image.Height < -1) { }
+            
+            return image;
         }
     }
 }
