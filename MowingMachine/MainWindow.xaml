@@ -13,8 +13,8 @@
                 <ColumnDefinition Width="1.5*" />
             </Grid.ColumnDefinitions>
 
-            <Grid  Name="SimulationGrid">
-            </Grid>
+            <Frame Name="SampleMapFrame">
+            </Frame>
 
             <Grid Grid.Column="1">
                 <StackPanel Height="100" Margin="10,10,10,0" VerticalAlignment="Top">

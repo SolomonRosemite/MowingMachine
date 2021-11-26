@@ -27,17 +27,16 @@ namespace MowingMachine.Services
             return (columnDefinitions, rowDefinitions);
         }
 
-        public static IEnumerable<UIElement> GetUiElements(ColumnDefinition[] columnDefinitions,
-            RowDefinition[] rowDefinitions)
+        public static IEnumerable<UIElement> GetUiElements(int[][] mapSample)
         {
-            var elements = new UIElement[columnDefinitions.Length * rowDefinitions.Length];
+            var elements = new UIElement[(int)Math.Pow(mapSample.Length, 2)];
 
             int count = 0;
-            for (int x = 0; x < rowDefinitions.Length; x++)
+            for (int x = 0; x < mapSample.Length; x++)
             {
-                for (int y = 0; y < columnDefinitions.Length; y++)
+                for (int y = 0; y < mapSample.Length; y++)
                 {
-                    FieldType type = y < Enum.GetNames<FieldType>().Length ? (FieldType)y : FieldType.Water;
+                    FieldType type = (FieldType)mapSample[x][y];
                     
                     var element = new Button
                     {
@@ -72,16 +71,6 @@ namespace MowingMachine.Services
                 FieldType.Water => GetImage("./assets/water.png"),
                 _ => throw new ArgumentOutOfRangeException(nameof(fieldType), fieldType, null),
             };
-        }
-
-        private static void GenerateNoise()
-        {
-            
-        }
-
-        private static bool NumberIsBetween(double numberToCheck, double bottom, double top)
-        {
-            return numberToCheck >= bottom && numberToCheck <= top;
         }
 
         private static BitmapImage GetImage(string path)

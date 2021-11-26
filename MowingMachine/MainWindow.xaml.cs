@@ -17,32 +17,23 @@ namespace MowingMachine
         public MainWindow()
         {
             InitializeComponent();
+            Console.WriteLine("Starting");
 
-            Console.WriteLine("Test");
+            int[][] sample = 
+            {
+                new []{ 1, 1, 1, 1, 1, 1, 1, 6, 6, 6 },
+                new []{ 1, 1, 6, 6, 6, 1, 1, 1, 1, 6 },
+                new []{ 1, 1, 6, 6, 6, 6, 1, 1, 1, 6 },
+                new []{ 1, 1, 6, 6, 6, 6, 1, 1, 1, 1 },
+                new []{ 1, 1, 1, 1, 1, 3, 1, 1, 1, 1 },
+                new []{ 1, 1, 1, 1, 1, 3, 1, 1, 1, 1 },
+                new []{ 1, 1, 1, 1, 1, 3, 1, 1, 5, 4 },
+                new []{ 1, 6, 3, 3, 3, 3, 1, 0, 0, 0 },
+                new []{ 1, 1, 3, 1, 1, 1, 1, 0, 6, 0 },
+                new []{ 1, 1, 3, 1, 1, 1, 0, 0, 0, 0 },
+            }; 
             
-            InitialRun();
-        }
-
-        private void InitialRun()
-        {
-            var (columnDefinitions, rowDefinitions) =
-                // MowingMachineService.GenerateDefinitions(3, 3);
-                MowingMachineService.GenerateDefinitions(10, 10);
-
-            ProcessData(columnDefinitions, rowDefinitions);
-        }
-
-        private void ProcessData(ColumnDefinition[] columnDefinitions, RowDefinition[] rowDefinitions)
-        {
-            for (int i = 0; i < rowDefinitions.Length; i++)
-                SimulationGrid.RowDefinitions.Add(rowDefinitions[i]);
-
-            for (int i = 0; i < columnDefinitions.Length; i++)
-                SimulationGrid.ColumnDefinitions.Add(columnDefinitions[i]);
-
-            var elements = MowingMachineService.GetUiElements(columnDefinitions, rowDefinitions);
-            foreach (var uiElement in elements)
-                SimulationGrid.Children.Add(uiElement);
+            SampleMapFrame.Content = new SampleMapPage(sample);
         }
     }
 }
