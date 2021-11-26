@@ -48,7 +48,7 @@
 
                                 <ProgressBar Grid.Column="1" Orientation="Vertical" Value="40" Height="200" />
                             </Grid>
-                            
+
                             <Label HorizontalAlignment="Center" Content="Charge: 40%"/>
                         </StackPanel>
 
@@ -68,25 +68,9 @@
                         </StackPanel>
                     </Grid>
 
-                    <Button Name="StartButton" Height="30" Content="Start Simulation" />
+                    <Button Name="StartButton" Height="30" Content="Start Simulation" Click="StartSimulationClick" />
                 </StackPanel>
             </Grid>
-
-            <!-- <Grid Grid.Column="2"> -->
-            <!--     <StackPanel Margin="10"> -->
-            <!--         <Label Content="MowingMachine settings" HorizontalAlignment="Center" /> -->
-            <!-- -->
-            <!--         <DockPanel Margin="0,10,0,0"> -->
-            <!--             <Label Content="Battery Capacity kWh: "/> -->
-            <!--             <TextBox Text="1.2" Height="20" /> -->
-            <!--         </DockPanel> -->
-            <!-- -->
-            <!--         <DockPanel Margin="0,10,0,0"> -->
-            <!--             <Label Content="Battery Capacity kWh: "/> -->
-            <!--             <TextBox Text="1.2" Height="20" /> -->
-            <!--         </DockPanel> -->
-            <!--     </StackPanel> -->
-            <!-- </Grid> -->
         </Grid>
     </Grid>
 </Window>

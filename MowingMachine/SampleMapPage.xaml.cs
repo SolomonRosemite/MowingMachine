@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using MowingMachine.Models;
 using MowingMachine.Services;
 
 namespace MowingMachine
@@ -21,25 +23,50 @@ namespace MowingMachine
     /// </summary>
     public partial class SampleMapPage : Page
     {
+        private readonly MyMowingMachine mowingMachine;
+        
         public SampleMapPage(int[][] sample)
         {
             InitializeComponent();
+
+            var mapManager = new MapManager(sample);
+            mowingMachine = new MyMowingMachine(sample.Length, mapManager);
+
+            mapManager.OnUpdateMap += UpdateMap;
             
             var (columnDefinitions, rowDefinitions) =
-                MowingMachineService.GenerateDefinitions(10, 10);
+                MowingMachineService.GenerateDefinitions(sample.Length, sample.Length);
 
-            ProcessData(columnDefinitions, rowDefinitions, sample);
+            CreateDefinitions(columnDefinitions, rowDefinitions);
+            
+            Render(sample);
         }
         
-        private void ProcessData(IReadOnlyList<ColumnDefinition> columnDefinitions, IReadOnlyList<RowDefinition> rowDefinitions, int[][] sample)
+        
+        public void DoStep()
+        {
+            mowingMachine.MakeMove();
+        }
+        
+        private void CreateDefinitions(IReadOnlyList<ColumnDefinition> columnDefinitions, IReadOnlyList<RowDefinition> rowDefinitions)
         {
             for (int i = 0; i < rowDefinitions.Count; i++)
                 SimulationGrid.RowDefinitions.Add(rowDefinitions[i]);
 
             for (int i = 0; i < columnDefinitions.Count; i++)
                 SimulationGrid.ColumnDefinitions.Add(columnDefinitions[i]);
+        }
 
-            var elements = MowingMachineService.GetUiElements(sample);
+        private void UpdateMap(object _, MapManager.OnUpdateMapEventArgs args)
+        {
+            Render(args.Map);
+        }
+
+        private void Render(IEnumerable<int[]> map)
+        {
+            var elements = MowingMachineService.GetUiElements(map.Reverse().ToArray());
+            
+            SimulationGrid.Children.Clear();
             foreach (var uiElement in elements)
                 SimulationGrid.Children.Add(uiElement);
         }
