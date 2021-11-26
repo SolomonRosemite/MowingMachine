@@ -19,15 +19,19 @@ namespace MowingMachine.Models
 
         public int[][] Map { get; private set;  }
         
-        public void MoveMowingMachine(MoveDirection direction, FieldType previousField)
+        public FieldType MoveMowingMachine(MoveDirection direction, FieldType previousField)
         {
             var (mowingMachineX, mowingMachineY) = GetMowingMachineCoordinate();
             var (x, y) = Map.GetTranslatedCoordinate(mowingMachineX, mowingMachineY, direction);
 
+            var nextPreviousField = (FieldType) Map[x][y];
+            
             Map[mowingMachineX][mowingMachineY] = (int) previousField;
             Map[x][y] = (int) FieldType.MowingMachine;
 
             OnUpdateMap?.Invoke(this, new OnUpdateMapEventArgs {Map = (int[][]) this.Map.Clone()});
+
+            return nextPreviousField;
         }
 
         public int[][] GetFieldsInSight()

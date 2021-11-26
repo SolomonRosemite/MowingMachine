@@ -3,5 +3,7 @@
     public enum Goal
     {
         Calibrate,
+        MowGrass,
+        Complete,
     }
 }
