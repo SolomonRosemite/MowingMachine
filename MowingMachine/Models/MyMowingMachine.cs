@@ -18,8 +18,10 @@ namespace MowingMachine.Models
 
         private FieldType prevFieldType = FieldType.ChargingStation;
         private Coordinate currentCoordinate;
+        private MoveDirection currentDirection = MoveDirection.Top;
         private Goal currentGoal = Goal.Calibrate;
-        
+
+        private bool isMowing = false;
         
         // Defines the count of fields we are apart from the calculated track
         private int currentOffset = 0;
@@ -54,10 +56,10 @@ namespace MowingMachine.Models
             }
         }
         
-        private void Move(MoveDirection direction)
+        private void Move(MoveDirection direction, FieldType? updatePrevFieldType = null)
         {
             NoteNextMove(direction);
-            prevFieldType = mapManager.MoveMowingMachine(direction, prevFieldType);
+            prevFieldType = mapManager.MoveMowingMachine(direction, updatePrevFieldType ?? prevFieldType);
         }
 
         private void NoteNextMove(MoveDirection direction)
@@ -67,9 +69,33 @@ namespace MowingMachine.Models
 
         private void MowGrass()
         {
-            // Todo: Implement...
+            isMowing = prevFieldType is FieldType.Grass or FieldType.CobbleStone;
+            
+            if (IsValidMove(currentDirection, out var value))
+                Move(currentDirection, FieldType.MowedLawn);
+            else if (value == -1)
+            {
+                // Turn around
+                // Also check if this is was the last column
+            }
+            else
+            {
+                // Go around obstacle
+                
+            }
         }
 
+        private bool IsValidMove(MoveDirection direction, out int val)
+        {
+            var fis = mapManager.GetFieldsInSight();
+
+            var value = fis.GetTranslatedField(1, 1, direction);
+
+            val = value;
+            
+            return value != -1 && (FieldType) value != FieldType.Water;
+
+        }
         private void Complete()
         {
             // Todo: Maybe double check if all the grass was mowed.
@@ -104,6 +130,7 @@ namespace MowingMachine.Models
             {
                 currentCoordinate = new Coordinate(0, 0);
                 currentGoal = Goal.MowGrass;
+                MakeMove();
                 return;
             }
 

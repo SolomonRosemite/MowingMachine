@@ -62,15 +62,25 @@ namespace MowingMachine.Services
         {
             return direction switch
             {
-                MoveDirection.Top => (0, 1),
-                MoveDirection.TopLeft => (-1, 1),
+                MoveDirection.Top => (1, 0),
+                MoveDirection.TopLeft => (1, -1),
                 MoveDirection.TopRight => (1, 1),
                 MoveDirection.Center => (0, 0),
-                MoveDirection.LeftCenter => (-1, 0),
-                MoveDirection.RightCenter => (1, 0),
-                MoveDirection.Bottom => (0, -1),
+                MoveDirection.LeftCenter => (0, -1),
+                MoveDirection.RightCenter => (0, 1),
+                MoveDirection.Bottom => (-1, 0),
                 MoveDirection.BottomLeft => (-1, -1),
-                MoveDirection.BottomRight => (1, -1),
+                MoveDirection.BottomRight => (-1, 1),
+
+                // MoveDirection.Top => (0, 1),
+                // MoveDirection.TopLeft => (-1, 1),
+                // MoveDirection.TopRight => (1, 1),
+                // MoveDirection.Center => (0, 0),
+                // MoveDirection.LeftCenter => (-1, 0),
+                // MoveDirection.RightCenter => (1, 0),
+                // MoveDirection.Bottom => (0, -1),
+                // MoveDirection.BottomLeft => (-1, -1),
+                // MoveDirection.BottomRight => (1, -1),
             };
         }
 

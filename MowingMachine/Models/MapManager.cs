@@ -16,8 +16,8 @@ namespace MowingMachine.Models
         {
             this.Map = map;
         }
-
-        public int[][] Map { get; private set;  }
+        
+        public int[][] Map { get; private set; }
         
         public FieldType MoveMowingMachine(MoveDirection direction, FieldType previousField)
         {
