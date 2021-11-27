@@ -9,65 +9,56 @@ namespace MowingMachine.Models
 {
     public class MyMowingMachine
     {
-        private readonly ObservableCollection<Coordinate> unreachableCoordinates = new();
-        private readonly List<Coordinate> visitedCoordinates = new();
-        private readonly List<Coordinate> unvisitedCoordinates = new();
-
-        private readonly List<MyMowingMachineMove> moves = new();
-        private readonly MapManager mapManager;
-
-        private FieldType prevFieldType = FieldType.ChargingStation;
-        private Coordinate currentCoordinate;
-        private MoveDirection currentDirection = MoveDirection.Top;
-        private Goal currentGoal = Goal.Calibrate;
-
-        private bool isMowing = false;
+        // Idk but this is probably not necessary.
+        private readonly ObservableCollection<Coordinate> _unreachableCoordinates = new();
         
-        // Defines the count of fields we are apart from the calculated track
-        private int currentOffset = 0;
+        // These are going to be all the coordinates we go, to mow the grass at that coordinate.
+        private readonly List<Coordinate> _reachableGrassCoordinates = new();
+        
+        // Here we keep track on what coordinates the grass was already mowed at.
+        private readonly List<Coordinate> _mowedCoordinates = new();
 
-        public MyMowingMachine(int mapSize, MapManager mapManager)
+        // Contains information about the map
+        private readonly MapManager _mapManager;
+
+        // This field preserves the most recent field the mowing machine was on. Initially it will be the charging station.
+        private FieldType _prevFieldType = FieldType.ChargingStation;
+        
+        private MoveDirection _currentFacingDirection = MoveDirection.Center;
+        private MoveDirection _currentDirection = MoveDirection.Center;
+        
+        private bool _isMowing;
+
+        public MyMowingMachine(List<Coordinate> reachableGrassCoordinates, MapManager mapManager)
         {
-            this.mapManager = mapManager;
-            
-            var xs = Enumerable.Range(0, mapSize);
-            var ys = Enumerable.Range(0, mapSize);
-
-            foreach (var x in xs)
-                foreach (var y in ys)
-                    unvisitedCoordinates.Add(new Coordinate(x, y));
+            _mapManager = mapManager;
+            _reachableGrassCoordinates = reachableGrassCoordinates;
         }
 
-        public void MakeMove()
+        public bool MakeMove()
         {
-            switch (currentGoal)
+            if (_reachableGrassCoordinates.Count == 0)
             {
-                case Goal.Calibrate:
-                    Calibrate();
-                    break;
-                case Goal.CorrectPath:
-                    CorrectPath();
-                    break;
-                case Goal.MowGrass:
-                    MowGrass();
-                    break;
-                case Goal.Complete:
-                    Complete();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                Complete();
+                return true;
             }
+            
+            MowGrass();
+            return false;
         }
         
         private void Move(MoveDirection direction, FieldType? updatePrevFieldType = null)
         {
+            if (_currentFacingDirection != direction)
+                Turn(direction);
+            
             NoteNextMove(direction);
-            prevFieldType = mapManager.MoveMowingMachine(direction, updatePrevFieldType ?? prevFieldType);
+            _prevFieldType = _mapManager.MoveMowingMachine(direction, updatePrevFieldType ?? _prevFieldType);
         }
-        
-        private void CorrectPath()
+
+        private void Turn(MoveDirection direction)
         {
-            // Todo: ...
+            NoteNextMove(direction);
         }
 
         private void NoteNextMove(MoveDirection direction)
@@ -75,86 +66,20 @@ namespace MowingMachine.Models
             // Todo: Save the move in there giving data structure.
         }
 
-        private void MowGrass()
-        {
-            isMowing = prevFieldType is FieldType.Grass;
-            
-            if (IsValidMove(currentDirection, out var value))
-                Move(currentDirection, isMowing ? FieldType.MowedLawn : null);
-            else if (value == -1)
-            {
-                
-                // Turn around
-                // Also check if this is was the last column
-            }
-            else
-            {
-                // Go around obstacle
-                // Note if we go off track (which we probaly have to do anyways) make sure to change the goal to currecting path
-            }
-        }
-
-        private bool IsValidMove(MoveDirection direction, out int val)
-        {
-            var fis = mapManager.GetFieldsInSight();
-
-            var value = fis.GetTranslatedField(1, 1, direction);
-
-            val = value;
-            
-            return value != -1 && (FieldType) value != FieldType.Water;
-
-        }
         private void Complete()
         {
+            Console.WriteLine("Mowing complete!");
             // Todo: Maybe double check if all the grass was mowed.
         }
         
-        private void Calibrate()
+        private void MowGrass()
         {
-            var fis = mapManager.GetFieldsInSight();
-            var bottomLeft = fis.GetTranslatedField(1, 1, MoveDirection.BottomLeft);
+            // Maybe as we go to the starting point (calibration point) we can already start mowing.
+            // Just keep in mind to also add the field the to _mowedCoordinates list and remove it from the _reachableGrassCoordinates
+            _isMowing = _prevFieldType is FieldType.Grass;
             
-            if (bottomLeft != -1 && (FieldType)bottomLeft != FieldType.Water)
-            {
-                Move(MoveDirection.BottomLeft);
-                return;
-            }
-
-            var leftCenter = fis.GetTranslatedField(1, 1, MoveDirection.LeftCenter);
-            if (leftCenter != -1 && (FieldType)bottomLeft != FieldType.Water)
-            {
-                Move(MoveDirection.LeftCenter);
-                return;
-            }
-
-            var bottom = fis.GetTranslatedField(1, 1, MoveDirection.Bottom);
-            if (bottom != -1 && (FieldType)bottomLeft != FieldType.Water)
-            {
-                Move(MoveDirection.Bottom);
-                return;
-            }
-
-            if (leftCenter == -1 && bottom == -1)
-            {
-                currentCoordinate = new Coordinate(0, 0);
-                currentGoal = Goal.MowGrass;
-                MakeMove();
-                return;
-            }
-
-            // Todo: Implement case when system cant calibrate
-            // The only way we get here is if the machine is stuck because of water.
-            // In that case we can recursively try to get out
-            
-            // For example
-            // [0, 0, 0]
-            // [6, 5, 0]
-            // [6, 6, 0]
-            
-            // In that case we need to try to get one up. Then we also can't go down again because that wouldn't make
-            // any sense... 
-            // Have fun!
+            // Todo: Move closer to the current target coordinate...
+            // We probably need dijkstra's algorithm here.
         }
     }
 }

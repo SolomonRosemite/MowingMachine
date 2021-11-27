@@ -20,8 +20,8 @@ namespace MowingMachine
                 new [] { 1, 1, 6, 6, 6, 6, 1, 1, 1, 1 },
                 new [] { 1, 1, 1, 1, 1, 3, 1, 1, 1, 1 },
                 new [] { 1, 1, 1, 1, 1, 3, 1, 1, 1, 1 },
-                new [] { 1, 1, 1, 1, 1, 3, 1, 1, 5, 4 },
-                new [] { 1, 1, 3, 3, 3, 3, 1, 0, 0, 0 },
+                new [] { 1, 1, 1, 1, 1, 3, 1, 1, 5, 1 },
+                new [] { 1, 6, 3, 3, 3, 3, 1, 0, 0, 0 },
                 new [] { 1, 1, 3, 1, 1, 1, 1, 0, 6, 0 },
                 new [] { 1, 1, 3, 1, 1, 1, 0, 0, 0, 0 },
             };
@@ -33,7 +33,7 @@ namespace MowingMachine
 
         private void StartSimulationClick(object sender, RoutedEventArgs e)
         {
-            (SampleMapFrame.Content as SampleMapPage)?.DoStep();
+            (SampleMapFrame.Content as SampleMapPage)?.ExecuteStep();
         }
     }
 }

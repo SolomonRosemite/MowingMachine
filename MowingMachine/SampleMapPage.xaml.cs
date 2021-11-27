@@ -23,14 +23,14 @@ namespace MowingMachine
     /// </summary>
     public partial class SampleMapPage : Page
     {
-        private readonly MyMowingMachine mowingMachine;
+        private readonly MyMowingMachine _mowingMachine;
         
         public SampleMapPage(int[][] sample)
         {
             InitializeComponent();
 
             var mapManager = new MapManager(sample);
-            mowingMachine = new MyMowingMachine(sample.Length, mapManager);
+            _mowingMachine = new MyMowingMachine(mapManager.GetAllReachableCoordinates(), mapManager);
 
             mapManager.OnUpdateMap += UpdateMap;
             
@@ -43,9 +43,14 @@ namespace MowingMachine
         }
         
         
-        public void DoStep()
+        public void ExecuteStep()
         {
-            mowingMachine.MakeMove();
+            var isComplete = _mowingMachine.MakeMove();
+
+            if (isComplete)
+            {
+                // Todo: Handle...
+            }
         }
         
         private void CreateDefinitions(IReadOnlyList<ColumnDefinition> columnDefinitions, IReadOnlyList<RowDefinition> rowDefinitions)
