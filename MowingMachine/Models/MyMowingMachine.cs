@@ -45,6 +45,9 @@ namespace MowingMachine.Models
                 case Goal.Calibrate:
                     Calibrate();
                     break;
+                case Goal.CorrectPath:
+                    CorrectPath();
+                    break;
                 case Goal.MowGrass:
                     MowGrass();
                     break;
@@ -61,6 +64,11 @@ namespace MowingMachine.Models
             NoteNextMove(direction);
             prevFieldType = mapManager.MoveMowingMachine(direction, updatePrevFieldType ?? prevFieldType);
         }
+        
+        private void CorrectPath()
+        {
+            // Todo: ...
+        }
 
         private void NoteNextMove(MoveDirection direction)
         {
@@ -69,19 +77,20 @@ namespace MowingMachine.Models
 
         private void MowGrass()
         {
-            isMowing = prevFieldType is FieldType.Grass or FieldType.CobbleStone;
+            isMowing = prevFieldType is FieldType.Grass;
             
             if (IsValidMove(currentDirection, out var value))
-                Move(currentDirection, FieldType.MowedLawn);
+                Move(currentDirection, isMowing ? FieldType.MowedLawn : null);
             else if (value == -1)
             {
+                
                 // Turn around
                 // Also check if this is was the last column
             }
             else
             {
                 // Go around obstacle
-                
+                // Note if we go off track (which we probaly have to do anyways) make sure to change the goal to currecting path
             }
         }
 

@@ -4,6 +4,7 @@
     {
         Calibrate,
         MowGrass,
+        CorrectPath,
         Complete,
     }
 }
