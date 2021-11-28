@@ -43,23 +43,45 @@ namespace MowingMachine.Models
             var reachableCoordinates = new List<Coordinate>();
             var mowingMachineCoordinate = GetMowingMachineCoordinate();
 
-            for (int x = 0; x < Map.Length; x++)
+            int x = 0;
+            while (x < Map.Length)
             {
-                for (int y = 0; y < Map.Length; y++)
-                {
-                    var coordinate = new Coordinate(x, y);
-                    
-                    var isReachable = PathToGoalCoordinate(coordinate, mowingMachineCoordinate) != null;
+                int y = x % 2 == 0 ? 0 : 9;
 
-                    if (isReachable)
+                if (y == 0)
+                {
+                    while (y < Map.Length)
                     {
-                        reachableCoordinates.Add(coordinate);
-                    }
-                    else
-                    {
+                        var coordinate = new Coordinate(x, y);
                         
+                        var isReachable = PathToGoalCoordinate(coordinate, mowingMachineCoordinate) != null;
+
+                        if (isReachable)
+                        {
+                            reachableCoordinates.Add(coordinate);
+                        }
+
+                        y++;
                     }
                 }
+                else
+                {
+                    while (y >= 0)
+                    {
+                        var coordinate = new Coordinate(x, y);
+                        
+                        var isReachable = PathToGoalCoordinate(coordinate, mowingMachineCoordinate) != null;
+
+                        if (isReachable)
+                        {
+                            reachableCoordinates.Add(coordinate);
+                        }
+
+                        y--;
+                    }
+                }
+
+                x++;
             }
             
             return reachableCoordinates;
