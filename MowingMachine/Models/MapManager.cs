@@ -55,6 +55,10 @@ namespace MowingMachine.Models
                     {
                         reachableCoordinates.Add(coordinate);
                     }
+                    else
+                    {
+                        
+                    }
                 }
             }
             
@@ -64,9 +68,12 @@ namespace MowingMachine.Models
         
         private List<Coordinate> PathToGoalCoordinate(Coordinate start, Coordinate goal)
         {
+            if (!IsValidField(start))
+                return null;
             
             var visitedCoordinates = new Dictionary<string, Coordinate>();
             var nextCoordinatesToVisit = new Queue<CoordinateInfo>();
+            // var nextCoordinatesToVisit = new Queue<CoordinateInfo>();
             
             nextCoordinatesToVisit.Enqueue(new CoordinateInfo(start, null));
 
@@ -77,25 +84,18 @@ namespace MowingMachine.Models
 
                 if (FoundSearchingCell(cellInfo))
                     break;
-
-                // if (count++ > 1000)
-                //     count = 0;
-                // Console.WriteLine("Test");
             }
             
             var tracedPath = new List<Coordinate>();
 
             var currenCoordinate = goal;
-            while (visitedCoordinates.Any(c => c.CurrentCoordinate.X == currenCoordinate.X && c.CurrentCoordinate.Y == currenCoordinate.Y))
+            while (visitedCoordinates.TryGetValue(currenCoordinate.ToString(), out var coord))
             {
-                var coord = visitedCoordinates.FirstOrDefault(c => c.CurrentCoordinate.X == currenCoordinate.X && c.CurrentCoordinate.Y == currenCoordinate.Y);
-
                 if (coord == null)
                     break;
                 
                 tracedPath.Add(currenCoordinate);
-                currenCoordinate = coord.PrevCoordinate;
-                visitedCoordinates.Remove(coord);
+                currenCoordinate = coord;
             }
             
             return tracedPath;
@@ -106,18 +106,22 @@ namespace MowingMachine.Models
                     return false;
 
                 // If it already exists, dont add again
-                if (visitedCoordinates.Any(c => c != null && c.CurrentCoordinate.X == info.CurrentCoordinate.X && c.CurrentCoordinate.Y == info.CurrentCoordinate.Y))
+                if (visitedCoordinates.ContainsKey(info.CurrentCoordinate.ToString()))
                    return false;
-                   
-                visitedCoordinates.Add(new CoordinateInfo(info.CurrentCoordinate, info.PrevCoordinate));
+
+                visitedCoordinates[info.CurrentCoordinate.ToString()] = info.PrevCoordinate;
 
                 if (info.CurrentCoordinate.X == goal.X && info.CurrentCoordinate.Y == goal.Y)
                     return true;
             
-                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X, info.CurrentCoordinate.Y + 1, info.PrevCoordinate));
-                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X, info.CurrentCoordinate.Y - 1, info.PrevCoordinate));
-                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X + 1, info.CurrentCoordinate.Y, info.PrevCoordinate));
-                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X - 1, info.CurrentCoordinate.Y, info.PrevCoordinate));
+                // nextCoordinatesToVisit.Enqueue(new Coordinate(info.CurrentCoordinate.X, info.CurrentCoordinate.Y + 1));
+                // nextCoordinatesToVisit.Enqueue(new Coordinate(info.CurrentCoordinate.X, info.CurrentCoordinate.Y - 1));
+                // nextCoordinatesToVisit.Enqueue(new Coordinate(info.CurrentCoordinate.X + 1, info.CurrentCoordinate.Y));
+                // nextCoordinatesToVisit.Enqueue(new Coordinate(info.CurrentCoordinate.X - 1, info.CurrentCoordinate.Y));
+                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X, info.CurrentCoordinate.Y + 1, info.CurrentCoordinate));
+                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X, info.CurrentCoordinate.Y - 1, info.CurrentCoordinate));
+                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X + 1, info.CurrentCoordinate.Y, info.CurrentCoordinate));
+                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X - 1, info.CurrentCoordinate.Y, info.CurrentCoordinate));
                 return false;
             }
 
