@@ -13,7 +13,7 @@ namespace MowingMachine.Models
         private readonly ObservableCollection<Coordinate> _unreachableCoordinates = new();
         
         // These are going to be all the coordinates we go, to mow the grass at that coordinate.
-        private readonly List<Coordinate> _reachableGrassCoordinates = new();
+        private readonly List<Coordinate> _reachableGrassCoordinates;
         
         // Here we keep track on what coordinates the grass was already mowed at.
         private readonly List<Coordinate> _mowedCoordinates = new();
@@ -26,7 +26,9 @@ namespace MowingMachine.Models
         
         private MoveDirection _currentFacingDirection = MoveDirection.Center;
         private MoveDirection _currentDirection = MoveDirection.Center;
-        
+
+        private List<Coordinate> _pathToTargetCoordinate;
+
         private bool _isMowing;
 
         public MyMowingMachine(List<Coordinate> reachableGrassCoordinates, MapManager mapManager)
@@ -59,6 +61,9 @@ namespace MowingMachine.Models
         private void Turn(MoveDirection direction)
         {
             NoteNextMove(direction);
+            
+            // Todo: Turn here.
+            // Call turn method again if needed
         }
 
         private void NoteNextMove(MoveDirection direction)
@@ -74,12 +79,43 @@ namespace MowingMachine.Models
         
         private void MowGrass()
         {
-            // Maybe as we go to the starting point (calibration point) we can already start mowing.
-            // Just keep in mind to also add the field the to _mowedCoordinates list and remove it from the _reachableGrassCoordinates
-            _isMowing = _prevFieldType is FieldType.Grass;
-            
-            // Todo: Move closer to the current target coordinate...
-            // We probably need dijkstra's algorithm here.
+            _isMowing = false;
+
+            var mowingMachinesCoordinate = _mapManager.GetMowingMachineCoordinate();
+
+            if (_pathToTargetCoordinate == null)
+            {
+                var goalCoordinate = _reachableGrassCoordinates.First();
+                
+                _pathToTargetCoordinate = _mapManager.PathToGoalCoordinate(mowingMachinesCoordinate, goalCoordinate, true);
+                _pathToTargetCoordinate.Reverse();
+            }
+
+            var directions = Enum.GetValues<MoveDirection>();
+            for (int i = 0; i < directions.Length; i++)
+            {
+                var translatedCoordinate = mowingMachinesCoordinate.GetTranslatedCoordinate(directions[i]);
+                Coordinate coordinate = _pathToTargetCoordinate.First();
+
+                if (translatedCoordinate.ToString() == coordinate.ToString())
+                {
+                    _pathToTargetCoordinate.Remove(coordinate);
+                    
+                    if (_pathToTargetCoordinate.Count == 0)
+                    {
+                        _isMowing = true;
+                        _pathToTargetCoordinate = null;
+                        _mowedCoordinates.Add(coordinate);
+                        _reachableGrassCoordinates.Remove(_reachableGrassCoordinates.First());
+                    }
+                    
+                    Move(directions[i]);
+                    _prevFieldType = _isMowing ? FieldType.MowedLawn : _prevFieldType;
+                    return;
+                }
+            }
+
+            throw new Exception("Could not find any matching translation.");
         }
     }
 }

@@ -84,22 +84,22 @@ namespace MowingMachine.Models
                 x++;
             }
             
+            // reachableCoordinates.ForEach(c => Map[c.X][c.Y] = 2);
+            
             return reachableCoordinates;
         }
 
         
-        private List<Coordinate> PathToGoalCoordinate(Coordinate start, Coordinate goal)
+        public List<Coordinate> PathToGoalCoordinate(Coordinate start, Coordinate goal, bool ignoreInitialPoint = false)
         {
-            if (!IsValidField(start))
+            if (!ignoreInitialPoint && !IsMowable(start.X, start.Y))
                 return null;
             
             var visitedCoordinates = new Dictionary<string, Coordinate>();
             var nextCoordinatesToVisit = new Queue<CoordinateInfo>();
-            // var nextCoordinatesToVisit = new Queue<CoordinateInfo>();
             
             nextCoordinatesToVisit.Enqueue(new CoordinateInfo(start, null));
 
-            // int count = 0;
             while (nextCoordinatesToVisit.Count != 0)
             {
                 var cellInfo = nextCoordinatesToVisit.Dequeue();
@@ -136,39 +136,28 @@ namespace MowingMachine.Models
                 if (info.CurrentCoordinate.X == goal.X && info.CurrentCoordinate.Y == goal.Y)
                     return true;
             
-                // nextCoordinatesToVisit.Enqueue(new Coordinate(info.CurrentCoordinate.X, info.CurrentCoordinate.Y + 1));
-                // nextCoordinatesToVisit.Enqueue(new Coordinate(info.CurrentCoordinate.X, info.CurrentCoordinate.Y - 1));
-                // nextCoordinatesToVisit.Enqueue(new Coordinate(info.CurrentCoordinate.X + 1, info.CurrentCoordinate.Y));
-                // nextCoordinatesToVisit.Enqueue(new Coordinate(info.CurrentCoordinate.X - 1, info.CurrentCoordinate.Y));
+                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X - 1, info.CurrentCoordinate.Y, info.CurrentCoordinate));
                 nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X, info.CurrentCoordinate.Y + 1, info.CurrentCoordinate));
                 nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X, info.CurrentCoordinate.Y - 1, info.CurrentCoordinate));
                 nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X + 1, info.CurrentCoordinate.Y, info.CurrentCoordinate));
-                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X - 1, info.CurrentCoordinate.Y, info.CurrentCoordinate));
                 return false;
             }
 
             bool IsValidField(Coordinate coordinate)
             {
-                try
-                {
-                    var value = Map[coordinate.X][coordinate.Y];
-                    return value != -1 && (FieldType) value != FieldType.Water;
-                }
-                catch
-                {
+                // In case coordinate is out of bounds
+                if (coordinate.X < 0 || coordinate.Y < 0 || coordinate.X == Map.Length || coordinate.Y == Map.Length )
                     return false;
-                }
+                
+                var value = Map[coordinate.X][coordinate.Y];
+                return value != -1 && (FieldType) value is not FieldType.Water;
+                // return value != -1 && (FieldType) value is FieldType.Grass;
             }
-        }
-        
-        public Coordinate GetNextTarget(Coordinate reachableCoordinate)
-        {
-            // Todo: Here we use dijkstra's algorithm to find the path from the mowing machine to the next grass field in the reachable list.
 
-            throw new NotImplementedException();
+            bool IsMowable(int x, int y) => Map[x][y] == 1;
         }
         
-        private Coordinate GetMowingMachineCoordinate()
+        public Coordinate GetMowingMachineCoordinate()
         {
             for (int x = 0; x < Map.Length; x++)
             {

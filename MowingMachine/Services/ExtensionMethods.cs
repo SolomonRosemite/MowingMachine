@@ -41,5 +41,12 @@ namespace MowingMachine.Services
 
             return (x, y);
         }
+        
+        public static Coordinate GetTranslatedCoordinate(this Coordinate coordinate, MoveDirection direction)
+        {
+            var (addX, addY) = MowingMachineService.TranslateDirection(direction);
+
+            return new Coordinate(coordinate.X + addX, coordinate.Y + addY);;
+        }
     }
 }
