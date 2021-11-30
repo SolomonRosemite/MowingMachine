@@ -193,6 +193,7 @@ namespace MowingMachine.Models
                     {
                         0 => MoveDirection.Top,
                         1 => MoveDirection.Right,
+                        // TODO: Its something here that is off
                         2 => MoveDirection.Bottom,
                         3 => MoveDirection.Left,
                         _ => throw new Exception(),
