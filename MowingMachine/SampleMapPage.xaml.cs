@@ -1,18 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using MowingMachine.Models;
 using MowingMachine.Services;
 
@@ -24,15 +12,16 @@ namespace MowingMachine
     public partial class SampleMapPage : Page
     {
         private readonly MyMowingMachine _mowingMachine;
-        
+        private readonly MapManager _mapManager;
+
         public SampleMapPage(int[][] sample)
         {
             InitializeComponent();
 
-            var mapManager = new MapManager(sample);
-            _mowingMachine = new MyMowingMachine(mapManager.GetAllReachableCoordinates(), mapManager);
+            _mapManager = new MapManager(sample);
+            _mowingMachine = new MyMowingMachine(_mapManager);
 
-            mapManager.OnUpdateMap += UpdateMap;
+            _mapManager.OnUpdateMap += UpdateMap;
             
             var (columnDefinitions, rowDefinitions) =
                 MowingMachineService.GenerateDefinitions(sample.Length, sample.Length);
@@ -45,7 +34,7 @@ namespace MowingMachine
         
         public void ExecuteStep()
         {
-            var isComplete = _mowingMachine.MakeMove();
+            var isComplete = _mowingMachine.PerformMove();
 
             if (isComplete)
             {

@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Drawing;
 using System.Linq;
+using System.Threading;
+using System.Windows.Documents;
 using MowingMachine.Services;
 
 namespace MowingMachine.Models
 {
     public class MyMowingMachine
     {
-        // Idk but this is probably not necessary.
-        private readonly ObservableCollection<Coordinate> _unreachableCoordinates = new();
-        
         // These are going to be all the coordinates we go, to mow the grass at that coordinate.
-        private readonly List<Coordinate> _reachableGrassCoordinates;
+        private readonly List<Field> _knownFields = new();
         
         // Here we keep track on what coordinates the grass was already mowed at.
         private readonly List<Coordinate> _mowedCoordinates = new();
@@ -22,24 +19,43 @@ namespace MowingMachine.Models
         private readonly MapManager _mapManager;
 
         // This field preserves the most recent field the mowing machine was on. Initially it will be the charging station.
-        private FieldType _prevFieldType = FieldType.ChargingStation;
+        private FieldType _currentFieldType = FieldType.ChargingStation;
         
         private MoveDirection _currentFacingDirection = MoveDirection.Center;
         private MoveDirection _currentDirection = MoveDirection.Center;
+        private Field _currentField;
 
-        private List<Coordinate> _pathToTargetCoordinate;
-
+        private bool _isGoingToChargingStation;
         private bool _isMowing;
 
-        public MyMowingMachine(List<Coordinate> reachableGrassCoordinates, MapManager mapManager)
+        public MyMowingMachine(MapManager mapManager)
         {
             _mapManager = mapManager;
-            _reachableGrassCoordinates = reachableGrassCoordinates;
+            
+            // Add initial fields
+            _currentField = GetField(_mapManager.GetFieldsOfView());
+            _knownFields.Add(_currentField);
         }
 
-        public bool MakeMove()
+        private Field GetField(FieldOfView fov)
         {
-            if (_reachableGrassCoordinates.Count == 0)
+            var neighbors = new List<Field>
+            {
+                new(fov.Top),
+                new(fov.Right),
+                new(fov.Bottom),
+                new(fov.Left),
+            };
+            
+            return new Field(fov.Center, neighbors);
+        }
+
+        public bool PerformMove()
+        {
+            if (!_mapManager.Verify())
+                return false;
+            
+            if (_knownFields.All(f => f.IsVisited))
             {
                 Complete();
                 return true;
@@ -49,73 +65,154 @@ namespace MowingMachine.Models
             return false;
         }
         
-        private void Move(MoveDirection direction, FieldType? updatePrevFieldType = null)
+        private MowingStep CalculateMove(MoveDirection direction)
         {
+            var turns = new Queue<MoveDirection>();
+            
             if (_currentFacingDirection != direction)
-                Turn(direction);
-            
-            NoteNextMove(direction);
-            _prevFieldType = _mapManager.MoveMowingMachine(direction, updatePrevFieldType ?? _prevFieldType);
-        }
+                turns = CalculateTurn(_currentFacingDirection, direction, turns);
 
-        private void Turn(MoveDirection direction)
+            return new MowingStep(turns, direction, Constants.TranslateMoveToExpense(_currentFieldType) + turns.Count * Constants.TurnExpense);
+        }
+        
+        private Field Move(MowingStep step, FieldType? updatePrevFieldType = null)
         {
-            NoteNextMove(direction);
-            
-            // Todo: Turn here.
-            // Call turn method again if needed
+            NoteNextMove(step);
+            _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType ?? _currentFieldType);
+
+            return GetField(_mapManager.GetFieldsOfView());
         }
 
-        private void NoteNextMove(MoveDirection direction)
+        private static Queue<MoveDirection> CalculateTurn(MoveDirection direction, MoveDirection finalDirection, Queue<MoveDirection> moves)
+        {
+            if (direction == finalDirection)
+                return moves;
+
+            int currentDir = (int) direction;
+            int finalDir = (int) finalDirection;
+
+            var x = Math.Min(currentDir, finalDir);
+
+            if (x == 6)
+            {
+                switch (direction)
+                {
+                    case MoveDirection.Top:
+                    case MoveDirection.Bottom:
+                        direction = MoveDirection.Left;
+                        moves.Enqueue(MoveDirection.Left);
+                        break;
+                    case MoveDirection.Right:
+                    case MoveDirection.Left:
+                        direction = MoveDirection.Top;
+                        moves.Enqueue(MoveDirection.Top);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
+                }
+
+                return CalculateTurn(direction, finalDirection, moves);
+            }
+            
+            moves.Enqueue(finalDirection);
+            return moves;
+        }
+
+        private void NoteNextMove(MowingStep step)
         {
             // Todo: Save the move in there giving data structure.
         }
 
         private void Complete()
         {
-            Console.WriteLine("Mowing complete!");
             // Todo: Maybe double check if all the grass was mowed.
+            Console.WriteLine("Mowing complete!");
         }
-        
+
+        private bool NeedsToRefuel()
+        {
+            // Todo: Check one step ahead if the fuel would be enough to go back to the charging station.
+            return false;
+        }
+
         private void MowGrass()
         {
-            _isMowing = false;
-
-            var mowingMachinesCoordinate = _mapManager.GetMowingMachineCoordinate();
-
-            if (_pathToTargetCoordinate == null)
+            if (_isGoingToChargingStation)
             {
-                var goalCoordinate = _reachableGrassCoordinates.First();
-                
-                _pathToTargetCoordinate = _mapManager.PathToGoalCoordinate(mowingMachinesCoordinate, goalCoordinate, true);
-                _pathToTargetCoordinate.Reverse();
+                MoveToChargingStation();
+                return;
             }
 
-            var directions = Enum.GetValues<MoveDirection>();
-            for (int i = 0; i < directions.Length; i++)
-            {
-                var translatedCoordinate = mowingMachinesCoordinate.GetTranslatedCoordinate(directions[i]);
-                Coordinate coordinate = _pathToTargetCoordinate.First();
+            var nextField = _knownFields.FindLast(f => !f.IsVisited);
 
-                if (translatedCoordinate.ToString() == coordinate.ToString())
+            if (nextField is null)
+                return;
+
+            if (!FieldIsInFov(nextField, out var direction))
+            {
+                // If not in field of view. Move one closer to the next field...
+                // Remember to change the direction then.
+            }
+
+            var moves = CalculateMove(direction);
+            
+            var needsToRefuelFirst = NeedsToRefuel();
+
+            if (needsToRefuelFirst)
+            {
+                MoveToChargingStation();
+                return;
+            }
+
+            _currentFacingDirection = direction;
+            var field = Move(moves, FieldType.MowedLawn);
+
+            nextField.IsVisited = true;
+            _knownFields.Add(field);
+        }
+
+        private bool FieldIsInFov(Field nextField, out MoveDirection moveDirection)
+        {
+            if (_currentField.NeighborFields is not null)
+            {
+                for (int i = 0; i < _currentField.NeighborFields.Count; i++)
                 {
-                    _pathToTargetCoordinate.Remove(coordinate);
+                    if (_currentField.NeighborFields[i].Id != nextField.Id)
+                        continue;
                     
-                    if (_pathToTargetCoordinate.Count == 0)
+                    moveDirection = i switch
                     {
-                        _isMowing = true;
-                        _pathToTargetCoordinate = null;
-                        _mowedCoordinates.Add(coordinate);
-                        _reachableGrassCoordinates.Remove(_reachableGrassCoordinates.First());
-                    }
-                    
-                    Move(directions[i]);
-                    _prevFieldType = _isMowing ? FieldType.MowedLawn : _prevFieldType;
-                    return;
+                        0 => MoveDirection.Top,
+                        1 => MoveDirection.Right,
+                        2 => MoveDirection.Bottom,
+                        3 => MoveDirection.Left,
+                        _ => throw new Exception(),
+                    };
+
+                    return true;
                 }
             }
 
-            throw new Exception("Could not find any matching translation.");
+            moveDirection = MoveDirection.Center;
+
+            return false;
+        }
+
+        private void MoveToChargingStation()
+        {
+            _isGoingToChargingStation = true;
+            
+            var fov = _mapManager.GetFieldsOfView();
+
+            if (fov.CenterCasted is FieldType.ChargingStation)
+            {
+                // Todo: Recharge here.
+
+                _isGoingToChargingStation = false;
+                return;
+            }
+            
+            // Todo: Keep moving to the charging station.
         }
     }
 }

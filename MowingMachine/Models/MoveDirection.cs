@@ -2,14 +2,10 @@
 {
     public enum MoveDirection
     {
-        Top,
-        TopLeft,
-        TopRight,
-        Center,
-        LeftCenter,
-        RightCenter,
-        Bottom,
-        BottomLeft,
-        BottomRight
+        Top = 12,
+        Right = 3,
+        Bottom = 6,
+        Left = 9,
+        Center = -1,
     }
 }

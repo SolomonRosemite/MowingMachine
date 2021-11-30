@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Principal;
+using System.Threading;
 using System.Windows.Documents;
 using MowingMachine.Services;
 
@@ -22,74 +23,45 @@ namespace MowingMachine.Models
         }
 
         private int[][] Map { get; }
+        private MowingStep _currentlyWorkingMowingStep;
         
-        public FieldType MoveMowingMachine(MoveDirection direction, FieldType previousField)
+        public FieldType MoveMowingMachine(MowingStep step, FieldType previousField)
         {
             var mowingMachineCoordinate = GetMowingMachineCoordinate();
-            var (x, y) = Map.GetTranslatedCoordinate(mowingMachineCoordinate.X, mowingMachineCoordinate.Y, direction);
+            var (x, y) = Map.GetTranslatedCoordinate(mowingMachineCoordinate.X, mowingMachineCoordinate.Y, step.MoveDirection);
 
             var nextPreviousField = (FieldType) Map[x][y];
             
             Map[mowingMachineCoordinate.X][mowingMachineCoordinate.Y] = (int) previousField;
             Map[x][y] = (int) FieldType.MowingMachine;
 
-            OnUpdateMap?.Invoke(this, new OnUpdateMapEventArgs {Map = (int[][]) this.Map.Clone()});
-
             return nextPreviousField;
         }
 
-        public List<Coordinate> GetAllReachableCoordinates()
+        public void Update()
         {
-            var reachableCoordinates = new List<Coordinate>();
-            var mowingMachineCoordinate = GetMowingMachineCoordinate();
-
-            int x = 0;
-            while (x < Map.Length)
-            {
-                int y = x % 2 == 0 ? 0 : 9;
-
-                if (y == 0)
-                {
-                    while (y < Map.Length)
-                    {
-                        var coordinate = new Coordinate(x, y);
-                        
-                        var isReachable = PathToGoalCoordinate(coordinate, mowingMachineCoordinate) != null;
-
-                        if (isReachable)
-                        {
-                            reachableCoordinates.Add(coordinate);
-                        }
-
-                        y++;
-                    }
-                }
-                else
-                {
-                    while (y >= 0)
-                    {
-                        var coordinate = new Coordinate(x, y);
-                        
-                        var isReachable = PathToGoalCoordinate(coordinate, mowingMachineCoordinate) != null;
-
-                        if (isReachable)
-                        {
-                            reachableCoordinates.Add(coordinate);
-                        }
-
-                        y--;
-                    }
-                }
-
-                x++;
-            }
-            
-            // reachableCoordinates.ForEach(c => Map[c.X][c.Y] = 2);
-            
-            return reachableCoordinates;
+            OnUpdateMap?.Invoke(this, new OnUpdateMapEventArgs { Map = (int[][]) this.Map.Clone() });
         }
 
-        
+        public bool Verify()
+        {
+            if (_currentlyWorkingMowingStep is null)
+                return true;
+            
+            if (_currentlyWorkingMowingStep.Turns.Count != 0)
+            {
+                var moveDirection = _currentlyWorkingMowingStep.Turns.Dequeue();
+                Console.WriteLine($"Turned mowing machine in direction: {moveDirection}");
+            }
+            else
+            {
+                Update();
+                _currentlyWorkingMowingStep = null;
+            }
+
+            return false;
+        }
+
         public List<Coordinate> PathToGoalCoordinate(Coordinate start, Coordinate goal, bool ignoreInitialPoint = false)
         {
             if (!ignoreInitialPoint && !IsMowable(start.X, start.Y))
@@ -104,7 +76,7 @@ namespace MowingMachine.Models
             {
                 var cellInfo = nextCoordinatesToVisit.Dequeue();
 
-                if (FoundSearchingCell(cellInfo))
+                if (GetNeighborCells(cellInfo))
                     break;
             }
             
@@ -122,7 +94,7 @@ namespace MowingMachine.Models
             
             return tracedPath;
 
-            bool FoundSearchingCell(CoordinateInfo info)
+            bool GetNeighborCells(CoordinateInfo info)
             {
                 if (!IsValidField(info.CurrentCoordinate))
                     return false;
@@ -155,6 +127,37 @@ namespace MowingMachine.Models
             }
 
             bool IsMowable(int x, int y) => Map[x][y] == 1;
+        }
+        
+        public FieldOfView GetFieldsOfView()
+        {
+            var coordinate = GetMowingMachineCoordinate();
+            return new FieldOfView(GetFieldsAroundCoordinate(coordinate.X, coordinate.Y));
+        }
+        
+        private int[][] GetFieldsAroundCoordinate(int xCoordinate, int yCoordinate)
+        {
+            var map = new[]
+            {
+                new int[3],
+                new int[3],
+                new int[3],
+            };
+
+            int mapX = 0;
+            for (int x = xCoordinate - 1; x < xCoordinate + 2; x++)
+            {
+                int mapY = 0;
+
+                for (int y = yCoordinate - 1; y < yCoordinate + 2; y++)
+                {
+                    map[mapX][mapY] = Map.GetField(x, y);
+                    mapY++;
+                }
+
+                mapX++;
+            }
+            return map;
         }
         
         public Coordinate GetMowingMachineCoordinate()

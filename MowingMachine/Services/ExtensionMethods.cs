@@ -6,14 +6,10 @@ namespace MowingMachine.Services
     {
         public static int GetField(this int[][] map, int x, int y)
         {
-            try
-            {
-                return map[x][y];
-            }
-            catch
-            {
+            if (x < 0 || y < 0)
                 return -1;
-            }
+         
+            return map[x][y];
         }
         
         public static int GetTranslatedField(this int[][] map, int x, int y, MoveDirection direction)
