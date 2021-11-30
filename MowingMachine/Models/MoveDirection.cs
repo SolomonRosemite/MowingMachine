@@ -6,6 +6,5 @@
         Right = 3,
         Bottom = 6,
         Left = 9,
-        Center = -1,
     }
 }

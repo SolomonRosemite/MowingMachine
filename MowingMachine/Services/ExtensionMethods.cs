@@ -6,7 +6,7 @@ namespace MowingMachine.Services
     {
         public static int GetField(this int[][] map, int x, int y)
         {
-            if (x < 0 || y < 0)
+            if (x < 0 || y < 0 || x == map.Length || y == map.Length)
                 return -1;
          
             return map[x][y];

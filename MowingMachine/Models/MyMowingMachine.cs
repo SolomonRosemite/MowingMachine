@@ -21,8 +21,8 @@ namespace MowingMachine.Models
         // This field preserves the most recent field the mowing machine was on. Initially it will be the charging station.
         private FieldType _currentFieldType = FieldType.ChargingStation;
         
-        private MoveDirection _currentFacingDirection = MoveDirection.Center;
-        private MoveDirection _currentDirection = MoveDirection.Center;
+        private MoveDirection _currentFacingDirection = MoveDirection.Left;
+        private MoveDirection _currentDirection = MoveDirection.Left;
         private Field _currentField;
 
         private bool _isGoingToChargingStation;
@@ -91,7 +91,7 @@ namespace MowingMachine.Models
             int currentDir = (int) direction;
             int finalDir = (int) finalDirection;
 
-            var x = Math.Min(currentDir, finalDir);
+            var x = Math.Min(Math.Abs(currentDir - finalDir), Math.Abs(finalDir - finalDir));
 
             if (x == 6)
             {
@@ -148,13 +148,21 @@ namespace MowingMachine.Models
             if (nextField is null)
                 return;
 
-            if (!FieldIsInFov(nextField, out var direction))
+            if (!GetNearbyField(nextField, out var direction))
             {
+                nextField.IsVisited = true;
+                MowGrass();
+                return;
+                
+                // Note: I thing the comment below is cap
                 // If not in field of view. Move one closer to the next field...
                 // Remember to change the direction then.
             }
 
-            var moves = CalculateMove(direction);
+            if (!direction.HasValue)
+                throw new Exception("Direction was null.");
+
+            var moves = CalculateMove(direction.Value);
             
             var needsToRefuelFirst = NeedsToRefuel();
 
@@ -164,20 +172,21 @@ namespace MowingMachine.Models
                 return;
             }
 
-            _currentFacingDirection = direction;
-            var field = Move(moves, FieldType.MowedLawn);
+            _currentFacingDirection = direction.Value;
+            _currentField = Move(moves, FieldType.MowedLawn);
 
             nextField.IsVisited = true;
-            _knownFields.Add(field);
+            _knownFields.Add(_currentField);
         }
 
-        private bool FieldIsInFov(Field nextField, out MoveDirection moveDirection)
+        private bool GetNearbyField(Field nextField, out MoveDirection? moveDirection)
         {
+            // Are not _currentField and nextField always the same??
             if (_currentField.NeighborFields is not null)
             {
                 for (int i = 0; i < _currentField.NeighborFields.Count; i++)
                 {
-                    if (_currentField.NeighborFields[i].Id != nextField.Id)
+                    if (_currentField.NeighborFields[i].Type is FieldType.Water)
                         continue;
                     
                     moveDirection = i switch
@@ -193,7 +202,7 @@ namespace MowingMachine.Models
                 }
             }
 
-            moveDirection = MoveDirection.Center;
+            moveDirection = null;
 
             return false;
         }

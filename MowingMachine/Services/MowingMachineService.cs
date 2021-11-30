@@ -63,7 +63,6 @@ namespace MowingMachine.Services
             return direction switch
             {
                 MoveDirection.Top => (1, 0),
-                MoveDirection.Center => (0, 0),
                 MoveDirection.Left => (0, -1),
                 MoveDirection.Right => (0, 1),
                 MoveDirection.Bottom => (-1, 0),

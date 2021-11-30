@@ -27,6 +27,8 @@ namespace MowingMachine.Models
         
         public FieldType MoveMowingMachine(MowingStep step, FieldType previousField)
         {
+            _currentlyWorkingMowingStep = step;
+            
             var mowingMachineCoordinate = GetMowingMachineCoordinate();
             var (x, y) = Map.GetTranslatedCoordinate(mowingMachineCoordinate.X, mowingMachineCoordinate.Y, step.MoveDirection);
 
