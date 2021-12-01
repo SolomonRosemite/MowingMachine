@@ -44,5 +44,10 @@ namespace MowingMachine.Services
 
             return new Coordinate(coordinate.X + addX, coordinate.Y + addY);;
         }
+
+        // public static MoveDirection InvertDirection(this MoveDirection direction)
+        // {
+        //     
+        // }
     }
 }

@@ -35,5 +35,29 @@ namespace MowingMachine.Models
             
             NeighborFields = neighborFields;
         }
+        
+        public void UpdateFieldNeighbor(Field field, MoveDirection direction)
+        {
+            if (NeighborFields is null)
+                throw new ArgumentException("Tried to update neighbors when list is null.");
+            
+            switch (direction)
+            {
+                case MoveDirection.Top:
+                    NeighborFields[0] = field;
+                    break;
+                case MoveDirection.Right:
+                    NeighborFields[1] = field;
+                    break;
+                case MoveDirection.Bottom:
+                    NeighborFields[2] = field;
+                    break;
+                case MoveDirection.Left:
+                    NeighborFields[3] = field;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
+            }
+        }
     }
 }

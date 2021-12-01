@@ -129,7 +129,7 @@ namespace MowingMachine.Models
             Console.WriteLine("Mowing complete!");
         }
 
-        private bool NeedsToRefuel()
+        private bool NeedsToRefuel(MowingStep step)
         {
             // Todo: Check one step ahead if the fuel would be enough to go back to the charging station.
             return false;
@@ -151,20 +151,34 @@ namespace MowingMachine.Models
             if (!GetNearbyField(nextField, out var direction))
             {
                 nextField.IsVisited = true;
+
+                var lastKnownSplit = _knownFields.LastOrDefault(f =>
+                    f.NeighborFields != null &&
+                    f.NeighborFields.Any(nf =>
+                        nf.Type is FieldType.Grass or FieldType.Sand or FieldType.ChargingStation or FieldType
+                            .ChargingStation or FieldType.MowingMachine));
+                    // f.NeighborFields != null && f.NeighborFields.Any(nf => nf.Type is not FieldType.Water or FieldType.MowedLawn || (int) nf.Type == -1));
+                
+                if (lastKnownSplit == null)
+                {
+                    // We are complete
+                    return;
+                }
+
+                var index = _knownFields.FindIndex(f => f.Id == lastKnownSplit.Id);
+                
+                _knownFields.AddRange(lastKnownSplit.NeighborFields!);
+                
                 MowGrass();
                 return;
-                
-                // Note: I thing the comment below is cap
-                // If not in field of view. Move one closer to the next field...
-                // Remember to change the direction then.
             }
 
             if (!direction.HasValue)
                 throw new Exception("Direction was null.");
 
-            var moves = CalculateMove(direction.Value);
+            var step = CalculateMove(direction.Value);
             
-            var needsToRefuelFirst = NeedsToRefuel();
+            var needsToRefuelFirst = NeedsToRefuel(step);
 
             if (needsToRefuelFirst)
             {
@@ -173,27 +187,37 @@ namespace MowingMachine.Models
             }
 
             _currentFacingDirection = direction.Value;
-            _currentField = Move(moves, FieldType.MowedLawn);
+            _currentField = Move(step, FieldType.MowedLawn);
 
             nextField.IsVisited = true;
-            _knownFields.Add(_currentField);
+
+            if (_knownFields.Count > 0)
+            {
+                _knownFields.Last().UpdateFieldNeighbor(_currentField, direction.Value);
+                _knownFields.Add(_currentField);
+            }
         }
 
         private bool GetNearbyField(Field nextField, out MoveDirection? moveDirection)
         {
             // Are not _currentField and nextField always the same??
+            if (_currentField != nextField)
+            {
+                
+            }
+            
             if (_currentField.NeighborFields is not null)
             {
                 for (int i = 0; i < _currentField.NeighborFields.Count; i++)
                 {
-                    if (_currentField.NeighborFields[i].Type is FieldType.Water)
+                    var field = _currentField.NeighborFields[i];
+                    if ((int) field.Type == -1 || field.Type is FieldType.Water or FieldType.MowedLawn)
                         continue;
                     
                     moveDirection = i switch
                     {
                         0 => MoveDirection.Top,
                         1 => MoveDirection.Right,
-                        // TODO: Its something here that is off
                         2 => MoveDirection.Bottom,
                         3 => MoveDirection.Left,
                         _ => throw new Exception(),

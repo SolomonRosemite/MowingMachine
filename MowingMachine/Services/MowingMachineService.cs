@@ -93,5 +93,17 @@ namespace MowingMachine.Services
             
             return image;
         }
+
+        public static MoveDirection InvertDirection(this MoveDirection direction)
+        {
+            return direction switch
+            {
+                MoveDirection.Top => MoveDirection.Bottom,
+                MoveDirection.Right => MoveDirection.Left,
+                MoveDirection.Bottom => MoveDirection.Top,
+                MoveDirection.Left => MoveDirection.Right,
+                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+            };
+        }
     }
 }
