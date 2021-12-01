@@ -1,4 +1,5 @@
-﻿using MowingMachine.Models;
+﻿using System;
+using MowingMachine.Models;
 
 namespace MowingMachine.Services
 {
@@ -45,9 +46,9 @@ namespace MowingMachine.Services
             return new Coordinate(coordinate.X + addX, coordinate.Y + addY);;
         }
 
-        // public static MoveDirection InvertDirection(this MoveDirection direction)
-        // {
-        //     
-        // }
+        public static bool AreNeighbors(this Offset o1, Offset o2)
+        {
+            return Math.Abs(o1.X - o2.X) + Math.Abs(o1.Y - o2.Y) <= 1;
+        }
     }
 }

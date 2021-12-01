@@ -11,9 +11,6 @@ namespace MowingMachine.Models
     {
         // These are going to be all the coordinates we go, to mow the grass at that coordinate.
         private readonly List<Field> _knownFields = new();
-        
-        // Here we keep track on what coordinates the grass was already mowed at.
-        private readonly List<Coordinate> _mowedCoordinates = new();
 
         // Contains information about the map
         private readonly MapManager _mapManager;
@@ -33,21 +30,21 @@ namespace MowingMachine.Models
             _mapManager = mapManager;
             
             // Add initial fields
-            _currentField = GetField(_mapManager.GetFieldsOfView());
+            _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0));
             _knownFields.Add(_currentField);
         }
 
-        private Field GetField(FieldOfView fov)
+        private Field GetField(FieldOfView fov, Offset offset)
         {
             var neighbors = new List<Field>
             {
-                new(fov.Top),
-                new(fov.Right),
-                new(fov.Bottom),
-                new(fov.Left),
+                new(fov.Top, offset.Add(0, 1)),
+                new(fov.Right, offset.Add(1, 0)),
+                new(fov.Bottom, offset.Add(0, -1)),
+                new(fov.Left, offset.Add(-1, 0)),
             };
             
-            return new Field(fov.Center, neighbors);
+            return new Field(fov.Center, offset, neighbors);
         }
 
         public bool PerformMove()
@@ -75,12 +72,12 @@ namespace MowingMachine.Models
             return new MowingStep(turns, direction, Constants.TranslateMoveToExpense(_currentFieldType) + turns.Count * Constants.TurnExpense);
         }
         
-        private Field Move(MowingStep step, FieldType? updatePrevFieldType = null)
+        private Field Move(MowingStep step, Offset newOffset, FieldType? updatePrevFieldType = null)
         {
             NoteNextMove(step);
             _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType ?? _currentFieldType);
 
-            return GetField(_mapManager.GetFieldsOfView());
+            return GetField(_mapManager.GetFieldsOfView(), newOffset);
         }
 
         private static Queue<MoveDirection> CalculateTurn(MoveDirection direction, MoveDirection finalDirection, Queue<MoveDirection> moves)
@@ -137,6 +134,7 @@ namespace MowingMachine.Models
 
         private void MowGrass()
         {
+            // If we are in the process of going back to the charging station, we dont want to interrupt
             if (_isGoingToChargingStation)
             {
                 MoveToChargingStation();
@@ -144,20 +142,17 @@ namespace MowingMachine.Models
             }
 
             var nextField = _knownFields.FindLast(f => !f.IsVisited);
-
             if (nextField is null)
                 return;
 
+            // Get next field to move on
             if (!GetNearbyField(nextField, out var direction))
             {
                 nextField.IsVisited = true;
-
+                
                 var lastKnownSplit = _knownFields.LastOrDefault(f =>
                     f.NeighborFields != null &&
-                    f.NeighborFields.Any(nf =>
-                        nf.Type is FieldType.Grass or FieldType.Sand or FieldType.ChargingStation or FieldType
-                            .ChargingStation or FieldType.MowingMachine));
-                    // f.NeighborFields != null && f.NeighborFields.Any(nf => nf.Type is not FieldType.Water or FieldType.MowedLawn || (int) nf.Type == -1));
+                    f.NeighborFields.Any(nf => nf.Type is FieldType.Grass or FieldType.Sand or FieldType.ChargingStation));
                 
                 if (lastKnownSplit == null)
                 {
@@ -167,17 +162,17 @@ namespace MowingMachine.Models
 
                 var index = _knownFields.FindIndex(f => f.Id == lastKnownSplit.Id);
                 
+                
+                // Todo: Continue here. Maybe we should only add items that are not visited? 
+                // If so, dont use the visited variable, use the offset and see if there are any other with the same offset as the current neighbor.
                 _knownFields.AddRange(lastKnownSplit.NeighborFields!);
                 
                 MowGrass();
                 return;
             }
 
-            if (!direction.HasValue)
-                throw new Exception("Direction was null.");
-
-            var step = CalculateMove(direction.Value);
-            
+            // Calculate if the fuel is enough for performing the step 
+            var step = CalculateMove(direction!.Value);
             var needsToRefuelFirst = NeedsToRefuel(step);
 
             if (needsToRefuelFirst)
@@ -186,21 +181,21 @@ namespace MowingMachine.Models
                 return;
             }
 
+            // Update values
             _currentFacingDirection = direction.Value;
-            _currentField = Move(step, FieldType.MowedLawn);
-
+            _currentField = Move(step, _knownFields.Last().Offset.Add(new Offset(direction.Value)),
+                _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType);
+            // _currentField.IsVisited = true;
             nextField.IsVisited = true;
 
-            if (_knownFields.Count > 0)
-            {
-                _knownFields.Last().UpdateFieldNeighbor(_currentField, direction.Value);
-                _knownFields.Add(_currentField);
-            }
+            // Update neighbor fields
+            _knownFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
+            _knownFields.Add(_currentField);
         }
 
         private bool GetNearbyField(Field nextField, out MoveDirection? moveDirection)
         {
-            // Are not _currentField and nextField always the same??
+            // Todo: Are _currentField and nextField not always the same anyways??
             if (_currentField != nextField)
             {
                 
@@ -227,8 +222,8 @@ namespace MowingMachine.Models
                 }
             }
 
-            moveDirection = null;
-
+            // The direction here doesn't effect anything. It just needs it be initialized for the code to compile. 
+            moveDirection = MoveDirection.Top;
             return false;
         }
 
