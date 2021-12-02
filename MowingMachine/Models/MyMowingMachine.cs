@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Windows.Documents;
 using MowingMachine.Services;
 
 namespace MowingMachine.Models
@@ -10,7 +8,11 @@ namespace MowingMachine.Models
     public class MyMowingMachine
     {
         // These are going to be all the coordinates we go, to mow the grass at that coordinate.
-        private readonly List<Field> _knownFields = new();
+        private readonly List<Field> _discoveredFields = new();
+
+        // The key is the offset (the visited field) and the value is the list of fields that can be visited from that field.
+        // These fields in the list haven't been visited yet.
+        private readonly List<KeyValuePair<MowingStep, List<Offset>>> _moves = new();
 
         // Contains information about the map
         private readonly MapManager _mapManager;
@@ -30,22 +32,15 @@ namespace MowingMachine.Models
             _mapManager = mapManager;
             
             // Add initial fields
-            _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0), _currentFieldType);
-            _knownFields.Add(_currentField);
+            _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0), FieldType.ChargingStation);
+            _discoveredFields.Add(_currentField);
         }
 
-        private Field GetField(FieldOfView fov, Offset offset, FieldType test)
+        private Field GetField(FieldOfView fov, Offset offset, FieldType fieldType)
         {
-            if (!_knownFields.Any())
+            if (fieldType == FieldType.ChargingStation)
             {
-                test = FieldType.ChargingStation;
-            }
-            else
-            {
-                if (test == FieldType.ChargingStation)
-                {
                     
-                }
             }
             
             var offsetTop = offset.Add(0, 1);
@@ -55,21 +50,13 @@ namespace MowingMachine.Models
             
             var neighbors = new List<Field>
             {
-                _knownFields.SingleOrDefault(f => f.Offset.CompareTo(offsetTop)) ?? new Field(fov.Top, offsetTop),
-                _knownFields.SingleOrDefault(f => f.Offset.CompareTo(offsetRight)) ?? new Field(fov.Right, offsetRight),
-                _knownFields.SingleOrDefault(f => f.Offset.CompareTo(offsetBottom)) ?? new Field(fov.Bottom, offsetBottom),
-                _knownFields.SingleOrDefault(f => f.Offset.CompareTo(offsetLeft)) ?? new Field(fov.Left, offsetLeft),
+                _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetTop)) ?? new Field(fov.TopCasted, offsetTop),
+                _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetRight)) ?? new Field(fov.RightCasted, offsetRight),
+                _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetBottom)) ?? new Field(fov.BottomCasted, offsetBottom),
+                _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetLeft)) ?? new Field(fov.LeftCasted, offsetLeft),
             };
             
-            // var neighbors = new List<Field>
-            // {
-            //     new(fov.Top, offset.Add(0, 1)),
-            //     new(fov.Right, offset.Add(1, 0)),
-            //     new(fov.Bottom, offset.Add(0, -1)),
-            //     new(fov.Left, offset.Add(-1, 0)),
-            // };
-            
-            return new Field((int)test, offset, neighbors);
+            return new Field(fieldType, offset, neighbors);
         }
 
         public bool PerformMove()
@@ -77,24 +64,39 @@ namespace MowingMachine.Models
             if (!_mapManager.Verify())
                 return false;
             
-            if (_knownFields.All(f => f.IsVisited))
+            if (_discoveredFields.All(f => f.IsVisited))
             {
                 Complete();
                 return true;
             }
             
-            MowGrass();
+            if (_isGoingToChargingStation)
+            {
+                MoveToChargingStation();
+                return false;
+            }
+
+            var calculatedSteps = CalculateNextMove();
+            
+            var needsToRefuelFirst = NeedsToRefuel(calculatedSteps);
+            if (needsToRefuelFirst)
+            {
+                MoveToChargingStation();
+                return false;
+            }
+            
+            PerformStep(calculatedSteps);
             return false;
         }
         
-        private MowingStep CalculateMove(MoveDirection direction)
+        private static MowingStep CalculateStopExpense(MoveDirection direction, MoveDirection currentFacingDirection, FieldType currentFieldType)
         {
             var turns = new Queue<MoveDirection>();
             
-            if (_currentFacingDirection != direction)
-                turns = CalculateTurn(_currentFacingDirection, direction, turns);
+            if (currentFacingDirection != direction)
+                turns = CalculateTurn(currentFacingDirection, direction, turns);
 
-            return new MowingStep(turns, direction, Constants.TranslateMoveToExpense(_currentFieldType) + turns.Count * Constants.TurnExpense);
+            return new MowingStep(turns, direction, currentFieldType);
         }
         
         private Field Move(MowingStep step, Offset newOffset, FieldType? updatePrevFieldType = null)
@@ -104,7 +106,7 @@ namespace MowingMachine.Models
 
             var type = updatePrevFieldType ?? _currentFieldType;
             
-            if (_knownFields.Any() && type == FieldType.ChargingStation)
+            if (_discoveredFields.Any() && type == FieldType.ChargingStation)
                 return GetField(_mapManager.GetFieldsOfView(), newOffset, FieldType.MowedLawn);
             return GetField(_mapManager.GetFieldsOfView(), newOffset, type);
         }
@@ -155,109 +157,102 @@ namespace MowingMachine.Models
             Console.WriteLine("Mowing complete!");
         }
 
-        private bool NeedsToRefuel(MowingStep step)
+        private bool NeedsToRefuel(List<MowingStep> steps)
         {
             // Todo: Check one step ahead if the fuel would be enough to go back to the charging station.
             return false;
         }
 
-        private void MowGrass()
+        private void PerformStep(List<MowingStep> steps)
         {
-            // If we are in the process of going back to the charging station, we dont want to interrupt
-            if (_isGoingToChargingStation)
-            {
-                MoveToChargingStation();
-                return;
-            }
-
-            var nextField = _knownFields.FindLast(f => !f.IsVisited);
-            if (nextField is null)
-                return;
-
-            // Get next field to move on
-            if (!GetNearbyField(nextField, out var direction))
-            {
-                nextField.IsVisited = true;
-                
-                var lastKnownSplit = _knownFields.LastOrDefault(f =>
-                    f.NeighborFields != null &&
-                    f.NeighborFields.Any(nf => nf.Type is FieldType.Grass or FieldType.Sand));
-                
-                if (lastKnownSplit == null)
-                {
-                    // We are complete
-                    return;
-                }
-
-                var index = _knownFields.FindIndex(f => f.Id == lastKnownSplit.Id);
-                
-                
-                // Todo: Continue here. Maybe we should only add items that are not visited? 
-                // If so, dont use the visited variable, use the offset and see if there are any other with the same offset as the current neighbor.
-                _knownFields.AddRange(lastKnownSplit.NeighborFields!);
-                
-                MowGrass();
-                return;
-            }
-
-            // Calculate if the fuel is enough for performing the step 
-            var step = CalculateMove(direction!.Value);
-            var needsToRefuelFirst = NeedsToRefuel(step);
-
-            if (needsToRefuelFirst)
-            {
-                MoveToChargingStation();
-                return;
-            }
-
-            // Update values
-            _currentFacingDirection = direction.Value;
-            _currentField = Move(step, _knownFields.Last().Offset.Add(new Offset(direction.Value)),
-                _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType);
-            // _currentField.IsVisited = true;
-            nextField.IsVisited = true;
-
-            // Update neighbor fields
-            _knownFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
-            _knownFields.Add(_currentField);
+            // Todo: Continue here.
+            
+            // // Update values
+            // _currentFacingDirection = direction.Value;
+            // _currentField = Move(step, _discoveredFields.Last().Offset.Add(new Offset(direction.Value)),
+            //     _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType);
+            // // _currentField.IsVisited = true;
+            // nextField.IsVisited = true;
+            //
+            // // Update neighbor fields
+            // _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
+            // _discoveredFields.Add(_currentField);
         }
 
-        private bool GetNearbyField(Field nextField, out MoveDirection? moveDirection)
+        private List<MowingStep> CalculateNextMove()
         {
-            // Todo: Are _currentField and nextField not always the same anyways??
-            if (_currentField != nextField)
+            // Todo: Double check if the inversion is right.
+            var successful = GetNextNeighborField(out var values);
+            var (_, direction) = values;
+
+            if (!successful)
             {
-                
+                var steps = new List<MowingStep>();
+                var currentDirection = _currentFacingDirection;
+                var currentlyStandFieldType = _currentFieldType;
+
+                for (int i = _moves.Count - 1; i >= 0; i--)
+                {
+                    var (prevFieldStep, neighbors) = _moves[i];
+                    
+                    var step = CalculateStopExpense(prevFieldStep.MoveDirection.InvertDirection(), currentDirection, currentlyStandFieldType);
+                    currentlyStandFieldType = prevFieldStep.FieldType;
+                    steps.Add(step);
+
+                    currentDirection = prevFieldStep.MoveDirection;
+                    
+                    if (neighbors.Any())
+                    {
+                        var finalDirection = MowingMachineService.TranslateOffsetToDirection(neighbors.First());
+                        
+                        var stepFinal = CalculateStopExpense(finalDirection.InvertDirection(), currentDirection, prevFieldStep.FieldType);
+                        steps.Add(stepFinal);
+                        
+                        break;
+                    }
+                }
+
+                return steps;
             }
             
-            if (_currentField.NeighborFields is not null)
+            var nextStep = CalculateStopExpense(direction.InvertDirection(), _currentDirection, _currentFieldType);
+
+            return new List<MowingStep> { nextStep };
+            
+            // var nextFieldToVisit = _discoveredFields.FindLast(f => !f.IsVisited);
+            // // If there is no next field to visit, we are done.
+            // // Todo: We can remove this if only the perform move method calls the function
+            // if (nextFieldToVisit is null)
+            //     return;
+            
+            
+            
+            // Get next field to move on
+            // if (!IsNeighborField(nextFieldToVisit, out var direction))
+            // {
+            //     // If 
+            // }
+
+            bool GetNextNeighborField(out (Field, MoveDirection) result)
             {
-                for (int i = 0; i < _currentField.NeighborFields.Count; i++)
+                var fieldIndex = _currentField.NeighborFields?.FindIndex(f => !f.IsVisited && f.CanBeWalkedOn());
+                result = (null, MoveDirection.Bottom);
+                
+                if (!fieldIndex.HasValue)
+                    return false;
+
+                result = (_currentField.NeighborFields[fieldIndex.Value], fieldIndex switch
                 {
-                    var field = _currentField.NeighborFields[i];
-                    
-                    if ((int) field.Type == -1 || field.Type is FieldType.Water or FieldType.MowedLawn or FieldType.ChargingStation)
-                    // if ((int) field.Type == -1 || field.Type is FieldType.Water or FieldType.MowedLawn)
-                        continue;
-                    
-                    moveDirection = i switch
-                    {
-                        0 => MoveDirection.Top,
-                        1 => MoveDirection.Right,
-                        2 => MoveDirection.Bottom,
-                        3 => MoveDirection.Left,
-                        _ => throw new Exception(),
-                    };
-
-                    return true;
-                }
+                    0 => MoveDirection.Top,
+                    1 => MoveDirection.Right,
+                    2 => MoveDirection.Bottom,
+                    3 => MoveDirection.Left,
+                    _ => throw new Exception(),
+                });
+                return true;
             }
-
-            // The direction here doesn't effect anything. It just needs it be initialized for the code to compile. 
-            moveDirection = MoveDirection.Top;
-            return false;
         }
-
+        
         private void MoveToChargingStation()
         {
             _isGoingToChargingStation = true;

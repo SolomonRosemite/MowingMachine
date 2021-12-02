@@ -1,4 +1,4 @@
-﻿using System;
+﻿using MowingMachine.Services;
 
 namespace MowingMachine.Models
 {
@@ -12,7 +12,7 @@ namespace MowingMachine.Models
         
         public Offset(MoveDirection direction)
         {
-            var (x, y) = DirectionToOffset(direction);
+            var (x, y) = MowingMachineService.TranslateDirectionToOffset(direction);
             
             X = x;
             Y = y;
@@ -25,17 +25,5 @@ namespace MowingMachine.Models
         public Offset Add(int addX, int addY) => new(X + addX, Y + addY);
 
         public bool CompareTo(Offset offset) => X == offset.X && Y == offset.Y;
-
-        private static (int, int) DirectionToOffset(MoveDirection direction)
-        {
-            return direction switch
-            {
-                MoveDirection.Top => (0, 1),
-                MoveDirection.Right => (1, 0),
-                MoveDirection.Bottom => (0, -1),
-                MoveDirection.Left => (-1, 0),
-                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
-            };
-        }
     }
 }

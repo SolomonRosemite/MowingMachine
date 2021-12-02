@@ -9,23 +9,20 @@ namespace MowingMachine.Models
 {
     public class Field
     {
-        public Field(int fieldType, Offset offset, List<Field> neighborFields)
+        public Field(FieldType fieldType, Offset offset, List<Field> neighborFields)
         {
-            Id = Guid.NewGuid();
-            Type = (FieldType) fieldType;
+            Type = fieldType;
             NeighborFields = neighborFields;
             Offset = offset;
         }
         
-        public Field(int fieldType, Offset offset)
+        public Field(FieldType fieldType, Offset offset)
         {
-            Id = Guid.NewGuid();
-            Type = (FieldType) fieldType;
+            Type = fieldType;
             NeighborFields = null;
             Offset = offset;
         }
 
-        public Guid Id { get; }
         public FieldType Type { get; }
         public Offset Offset { get;  }
         public List<Field>? NeighborFields { get; private set;  }
@@ -58,6 +55,14 @@ namespace MowingMachine.Models
                 int index = Offset.X == field.Offset.X + 1 ? 3 : 1;
                 NeighborFields[index] = field;
             }
+        }
+
+        public bool CanBeWalkedOn()
+        {
+            if ((int) Type == -1)
+                return false;
+
+            return Type is not FieldType.Water;
         }
     }
 }

@@ -93,17 +93,31 @@ namespace MowingMachine.Services
             
             return image;
         }
-
-        public static MoveDirection InvertDirection(this MoveDirection direction)
+        
+        public static (int, int) TranslateDirectionToOffset(MoveDirection direction)
         {
             return direction switch
             {
-                MoveDirection.Top => MoveDirection.Bottom,
-                MoveDirection.Right => MoveDirection.Left,
-                MoveDirection.Bottom => MoveDirection.Top,
-                MoveDirection.Left => MoveDirection.Right,
+                MoveDirection.Top => (0, 1),
+                MoveDirection.Right => (1, 0),
+                MoveDirection.Bottom => (0, -1),
+                MoveDirection.Left => (-1, 0),
                 _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
             };
+        }
+
+        public static MoveDirection TranslateOffsetToDirection(Offset offset)
+        {
+            if (offset.CompareTo(new Offset(0, 1)))
+                return MoveDirection.Top;
+            if (offset.CompareTo(new Offset(1, 0)))
+                return MoveDirection.Right;
+            if (offset.CompareTo(new Offset(0, -1)))
+                return MoveDirection.Bottom;
+            if (offset.CompareTo(new Offset(-1, 0)))
+                return MoveDirection.Bottom;
+
+            throw new ArgumentException("Offset was beyond");
         }
     }
 }

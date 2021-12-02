@@ -40,7 +40,7 @@ namespace MowingMachine.Models
             return nextPreviousField;
         }
 
-        public void Update()
+        private void Update()
         {
             OnUpdateMap?.Invoke(this, new OnUpdateMapEventArgs { Map = (int[][]) this.Map.Clone() });
         }

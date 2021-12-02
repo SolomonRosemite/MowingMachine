@@ -50,5 +50,17 @@ namespace MowingMachine.Services
         {
             return Math.Abs(o1.X - o2.X) + Math.Abs(o1.Y - o2.Y) <= 1;
         }
+        
+        public static MoveDirection InvertDirection(this MoveDirection direction)
+        {
+            return direction switch
+            {
+                MoveDirection.Top => MoveDirection.Bottom,
+                MoveDirection.Right => MoveDirection.Left,
+                MoveDirection.Bottom => MoveDirection.Top,
+                MoveDirection.Left => MoveDirection.Right,
+                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+            };
+        }
     }
 }
