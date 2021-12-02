@@ -55,7 +55,7 @@ namespace MowingMachine.Models
             }
             else
             {
-                int index = Offset.X == field.Offset.X + 1 ? 1 : 3;
+                int index = Offset.X == field.Offset.X + 1 ? 3 : 1;
                 NeighborFields[index] = field;
             }
         }

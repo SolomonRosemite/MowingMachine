@@ -30,21 +30,46 @@ namespace MowingMachine.Models
             _mapManager = mapManager;
             
             // Add initial fields
-            _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0));
+            _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0), _currentFieldType);
             _knownFields.Add(_currentField);
         }
 
-        private Field GetField(FieldOfView fov, Offset offset)
+        private Field GetField(FieldOfView fov, Offset offset, FieldType test)
         {
+            if (!_knownFields.Any())
+            {
+                test = FieldType.ChargingStation;
+            }
+            else
+            {
+                if (test == FieldType.ChargingStation)
+                {
+                    
+                }
+            }
+            
+            var offsetTop = offset.Add(0, 1);
+            var offsetRight = offset.Add(1, 0);
+            var offsetBottom = offset.Add(0, -1);
+            var offsetLeft = offset.Add(-1, 0);
+            
             var neighbors = new List<Field>
             {
-                new(fov.Top, offset.Add(0, 1)),
-                new(fov.Right, offset.Add(1, 0)),
-                new(fov.Bottom, offset.Add(0, -1)),
-                new(fov.Left, offset.Add(-1, 0)),
+                _knownFields.SingleOrDefault(f => f.Offset.CompareTo(offsetTop)) ?? new Field(fov.Top, offsetTop),
+                _knownFields.SingleOrDefault(f => f.Offset.CompareTo(offsetRight)) ?? new Field(fov.Right, offsetRight),
+                _knownFields.SingleOrDefault(f => f.Offset.CompareTo(offsetBottom)) ?? new Field(fov.Bottom, offsetBottom),
+                _knownFields.SingleOrDefault(f => f.Offset.CompareTo(offsetLeft)) ?? new Field(fov.Left, offsetLeft),
             };
             
-            return new Field(fov.Center, offset, neighbors);
+            // var neighbors = new List<Field>
+            // {
+            //     new(fov.Top, offset.Add(0, 1)),
+            //     new(fov.Right, offset.Add(1, 0)),
+            //     new(fov.Bottom, offset.Add(0, -1)),
+            //     new(fov.Left, offset.Add(-1, 0)),
+            // };
+            
+            return new Field((int)test, offset, neighbors);
         }
 
         public bool PerformMove()
@@ -77,7 +102,11 @@ namespace MowingMachine.Models
             NoteNextMove(step);
             _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType ?? _currentFieldType);
 
-            return GetField(_mapManager.GetFieldsOfView(), newOffset);
+            var type = updatePrevFieldType ?? _currentFieldType;
+            
+            if (_knownFields.Any() && type == FieldType.ChargingStation)
+                return GetField(_mapManager.GetFieldsOfView(), newOffset, FieldType.MowedLawn);
+            return GetField(_mapManager.GetFieldsOfView(), newOffset, type);
         }
 
         private static Queue<MoveDirection> CalculateTurn(MoveDirection direction, MoveDirection finalDirection, Queue<MoveDirection> moves)
@@ -152,7 +181,7 @@ namespace MowingMachine.Models
                 
                 var lastKnownSplit = _knownFields.LastOrDefault(f =>
                     f.NeighborFields != null &&
-                    f.NeighborFields.Any(nf => nf.Type is FieldType.Grass or FieldType.Sand or FieldType.ChargingStation));
+                    f.NeighborFields.Any(nf => nf.Type is FieldType.Grass or FieldType.Sand));
                 
                 if (lastKnownSplit == null)
                 {
@@ -206,7 +235,9 @@ namespace MowingMachine.Models
                 for (int i = 0; i < _currentField.NeighborFields.Count; i++)
                 {
                     var field = _currentField.NeighborFields[i];
-                    if ((int) field.Type == -1 || field.Type is FieldType.Water or FieldType.MowedLawn)
+                    
+                    if ((int) field.Type == -1 || field.Type is FieldType.Water or FieldType.MowedLawn or FieldType.ChargingStation)
+                    // if ((int) field.Type == -1 || field.Type is FieldType.Water or FieldType.MowedLawn)
                         continue;
                     
                     moveDirection = i switch

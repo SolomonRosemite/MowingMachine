@@ -24,6 +24,8 @@ namespace MowingMachine.Models
         public Offset Add(Offset offset) => new(X + offset.X, Y + offset.Y);
         public Offset Add(int addX, int addY) => new(X + addX, Y + addY);
 
+        public bool CompareTo(Offset offset) => X == offset.X && Y == offset.Y;
+
         private static (int, int) DirectionToOffset(MoveDirection direction)
         {
             return direction switch
