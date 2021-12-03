@@ -22,6 +22,7 @@ namespace MowingMachine.Models
         public int Y { get; }
 
         public Offset Add(Offset offset) => new(X + offset.X, Y + offset.Y);
+        public Offset Subtract(Offset offset) => new(X - offset.X, Y - offset.Y);
         public Offset Add(int addX, int addY) => new(X + addX, Y + addY);
 
         public bool CompareTo(Offset offset) => X == offset.X && Y == offset.Y;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using MowingMachine.Services;
 
 namespace MowingMachine.Models
@@ -12,9 +13,7 @@ namespace MowingMachine.Models
         // These are going to be all the coordinates we go, to mow the grass at that coordinate.
         private readonly List<Field> _discoveredFields = new();
 
-        // The key is the offset (the visited field) and the value is the list of fields that can be visited from that field.
-        // These fields in the list haven't been visited yet.
-        private readonly List<KeyValuePair<MowingStep, List<Offset>>> _moves = new();
+        private readonly List<(MowingStep, List<Field>, Offset)> _moves = new();
 
         // Contains information about the map
         private readonly MapManager _mapManager;
@@ -109,7 +108,11 @@ namespace MowingMachine.Models
         
         private Field Move(MowingStep step, Offset newOffset, FieldType? updatePrevFieldType = null)
         {
-            NoteNextMove(step);
+            // if (newOffset.CompareTo(new Offset(1, 3)))
+            // {
+            //     
+            // }
+            
             _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType ?? _currentFieldType);
 
             var type = updatePrevFieldType ?? _currentFieldType;
@@ -156,9 +159,26 @@ namespace MowingMachine.Models
             return moves;
         }
 
-        private void NoteNextMove(MowingStep step)
+        private void NoteNextMove(MowingStep step, Offset offset)
         {
-            // Todo: Save the move in there giving data structure.
+            for (var i = 0; i < _moves.Count; i++)
+            {
+                var (_, offsets, relatedOffset) = _moves[i];
+                
+                var neighbors = _discoveredFields.Single(f => f.Offset.CompareTo(relatedOffset)).NeighborFields;
+
+                if (neighbors is null)
+                    continue;
+                
+                offsets.Clear();
+                offsets.AddRange(neighbors.Where(nf => !nf.IsVisited && nf.CanBeWalkedOn()));
+            }
+            
+            var unvisitedFields = _discoveredFields.Single(f => f.Offset.CompareTo(offset))
+                .NeighborFields!.Where(nf => !nf.IsVisited && nf.CanBeWalkedOn())
+                .ToList();
+            
+            _moves.Add((step, unvisitedFields, offset));
         }
 
         private void Complete()
@@ -184,25 +204,28 @@ namespace MowingMachine.Models
             // _currentFacingDirection = steps.Last().MoveDirection;
             
             if (_currentField.Offset.CompareTo(new Offset(0,0)))
-            // if (_discoveredFields.Any(f => f.Offset.CompareTo(new Offset(0,0))))
                 Console.WriteLine("test");
+
+            var oldOffset = _discoveredFields.Last().Offset;
+            var newOffset = oldOffset.Add(new Offset(nextStep.MoveDirection));
             
-            _currentField = Move(nextStep, _discoveredFields.Last().Offset.Add(new Offset(nextStep.MoveDirection)),
+            _currentField = Move(nextStep, newOffset,
                 _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType);
-            
             
             _currentField.IsVisited = true;
 
             if (_discoveredFields.Any(f => f.Offset.CompareTo(_currentField.Offset)))
             {
                 _discoveredFields.Move(_discoveredFields.First(f => f.Offset.CompareTo(_currentField.Offset)), _discoveredFields.Count);
-                
+                NoteNextMove(nextStep, newOffset);
                 return;
             }
             
             // Update neighbor fields
             _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
             _discoveredFields.Add(_currentField);
+            
+            NoteNextMove(nextStep, newOffset);
         }
 
         private List<MowingStep> CalculateNextMove()
@@ -210,7 +233,7 @@ namespace MowingMachine.Models
             // Todo: Double check if the inversion is right.
             var successful = GetNextNeighborField(out var values);
             var (_, direction) = values;
-
+            
             if (!successful)
             {
                 var steps = new List<MowingStep>();
@@ -219,7 +242,7 @@ namespace MowingMachine.Models
 
                 for (int i = _moves.Count - 1; i >= 0; i--)
                 {
-                    var (prevFieldStep, neighbors) = _moves[i];
+                    var (prevFieldStep, neighbors, offset) = _moves[i];
                     
                     var step = CalculateStepExpense(prevFieldStep.MoveDirection.InvertDirection(), currentDirection, currentlyStandFieldType);
                     currentlyStandFieldType = prevFieldStep.FieldType;
@@ -229,7 +252,10 @@ namespace MowingMachine.Models
                     
                     if (neighbors.Any())
                     {
-                        var finalDirection = MowingMachineService.TranslateOffsetToDirection(neighbors.First());
+                        var x = neighbors
+                            .Select(nf => nf.Offset.Subtract(offset)).First();
+                        
+                        var finalDirection = MowingMachineService.TranslateOffsetToDirection(x);
                         
                         var stepFinal = CalculateStepExpense(finalDirection.InvertDirection(), currentDirection, prevFieldStep.FieldType);
                         steps.Add(stepFinal);
