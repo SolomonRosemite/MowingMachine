@@ -64,73 +64,6 @@ namespace MowingMachine.Models
             return false;
         }
 
-        public List<Coordinate> PathToGoalCoordinate(Coordinate start, Coordinate goal, bool ignoreInitialPoint = false)
-        {
-            if (!ignoreInitialPoint && !IsMowable(start.X, start.Y))
-                return null;
-            
-            var visitedCoordinates = new Dictionary<string, Coordinate>();
-            var nextCoordinatesToVisit = new Queue<CoordinateInfo>();
-            
-            nextCoordinatesToVisit.Enqueue(new CoordinateInfo(start, null));
-
-            while (nextCoordinatesToVisit.Count != 0)
-            {
-                var cellInfo = nextCoordinatesToVisit.Dequeue();
-
-                if (GetNeighborCells(cellInfo))
-                    break;
-            }
-            
-            var tracedPath = new List<Coordinate>();
-
-            var currenCoordinate = goal;
-            while (visitedCoordinates.TryGetValue(currenCoordinate.ToString(), out var coord))
-            {
-                if (coord == null)
-                    break;
-                
-                tracedPath.Add(currenCoordinate);
-                currenCoordinate = coord;
-            }
-            
-            return tracedPath;
-
-            bool GetNeighborCells(CoordinateInfo info)
-            {
-                if (!IsValidField(info.CurrentCoordinate))
-                    return false;
-
-                // If it already exists, dont add again
-                if (visitedCoordinates.ContainsKey(info.CurrentCoordinate.ToString()))
-                   return false;
-
-                visitedCoordinates[info.CurrentCoordinate.ToString()] = info.PrevCoordinate;
-
-                if (info.CurrentCoordinate.X == goal.X && info.CurrentCoordinate.Y == goal.Y)
-                    return true;
-            
-                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X - 1, info.CurrentCoordinate.Y, info.CurrentCoordinate));
-                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X, info.CurrentCoordinate.Y + 1, info.CurrentCoordinate));
-                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X, info.CurrentCoordinate.Y - 1, info.CurrentCoordinate));
-                nextCoordinatesToVisit.Enqueue(new CoordinateInfo(info.CurrentCoordinate.X + 1, info.CurrentCoordinate.Y, info.CurrentCoordinate));
-                return false;
-            }
-
-            bool IsValidField(Coordinate coordinate)
-            {
-                // In case coordinate is out of bounds
-                if (coordinate.X < 0 || coordinate.Y < 0 || coordinate.X == Map.Length || coordinate.Y == Map.Length )
-                    return false;
-                
-                var value = Map[coordinate.X][coordinate.Y];
-                return value != -1 && (FieldType) value is not FieldType.Water;
-                // return value != -1 && (FieldType) value is FieldType.Grass;
-            }
-
-            bool IsMowable(int x, int y) => Map[x][y] == 1;
-        }
-        
         public FieldOfView GetFieldsOfView()
         {
             var coordinate = GetMowingMachineCoordinate();
@@ -162,7 +95,7 @@ namespace MowingMachine.Models
             return map;
         }
         
-        public Coordinate GetMowingMachineCoordinate()
+        private Coordinate GetMowingMachineCoordinate()
         {
             for (int x = 0; x < Map.Length; x++)
             {
