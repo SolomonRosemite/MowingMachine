@@ -129,30 +129,21 @@ namespace MowingMachine.Models
             if (direction == finalDirection)
                 return moves;
 
-            int currentDir = (int) direction;
-            int finalDir = (int) finalDirection;
-
-            var x = Math.Min(Math.Abs(currentDir - finalDir), Math.Abs(finalDir - finalDir));
-
-            if (x == 6)
+            if (direction.InvertDirection() == finalDirection)
             {
                 switch (direction)
                 {
                     case MoveDirection.Top:
                     case MoveDirection.Bottom:
-                        direction = MoveDirection.Left;
                         moves.Enqueue(MoveDirection.Left);
                         break;
                     case MoveDirection.Right:
                     case MoveDirection.Left:
-                        direction = MoveDirection.Top;
                         moves.Enqueue(MoveDirection.Top);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
                 }
-
-                return CalculateTurn(direction, finalDirection, moves);
             }
             
             moves.Enqueue(finalDirection);
@@ -243,23 +234,26 @@ namespace MowingMachine.Models
                 for (int i = _moves.Count - 1; i >= 0; i--)
                 {
                     var (prevFieldStep, neighbors, offset) = _moves[i];
-                    
-                    var step = CalculateStepExpense(prevFieldStep.MoveDirection.InvertDirection(), currentDirection, currentlyStandFieldType);
-                    currentlyStandFieldType = prevFieldStep.FieldType;
-                    steps.Add(step);
 
-                    currentDirection = prevFieldStep.MoveDirection;
+                    if (!neighbors.Any())
+                    {
+                        var step = CalculateStepExpense(prevFieldStep.MoveDirection.InvertDirection(), currentDirection, currentlyStandFieldType);
+                        currentlyStandFieldType = prevFieldStep.FieldType;
+                        steps.Add(step);
+
+                        currentDirection = step.MoveDirection;
+                    }
+                    
                     
                     if (neighbors.Any())
                     {
-                        var x = neighbors
+                        var calculatedOffset = neighbors
                             .Select(nf => nf.Offset.Subtract(offset)).First();
                         
-                        var finalDirection = MowingMachineService.TranslateOffsetToDirection(x);
+                        var finalDirection = MowingMachineService.TranslateOffsetToDirection(calculatedOffset);
                         
-                        var stepFinal = CalculateStepExpense(finalDirection.InvertDirection(), currentDirection, prevFieldStep.FieldType);
+                        var stepFinal = CalculateStepExpense(finalDirection, currentDirection, prevFieldStep.FieldType);
                         steps.Add(stepFinal);
-                        
                         break;
                     }
                 }
