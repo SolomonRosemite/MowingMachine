@@ -68,6 +68,16 @@ namespace MowingMachine.Models
             if (_mowingSteps.Any())
             {
                 _currentFieldType = _mapManager.MoveMowingMachine(_mowingSteps.Dequeue(), _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType);
+
+                if (!_mowingSteps.Any())
+                {
+                    _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(1, -1), _currentFieldType);
+                    
+                    // Update neighbor fields
+                    _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
+                    _discoveredFields.Add(_currentField);
+                }
+                
                 return false;
             }
             
@@ -303,6 +313,7 @@ namespace MowingMachine.Models
             }
             
             // Todo: Keep moving to the charging station.
+            // We can use dijkstra with the help of our discovered list maybe?
         }
     }
 }
