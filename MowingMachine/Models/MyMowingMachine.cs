@@ -28,12 +28,15 @@ namespace MowingMachine.Models
         private bool _isGoingToChargingStation;
         // private bool _isMowing;
 
+        private Offset _tempOffset;
+
         public MyMowingMachine(MapManager mapManager)
         {
             _mapManager = mapManager;
             
             // Add initial fields
             _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0), FieldType.ChargingStation);
+            // _currentField.IsVisited = true;
             _discoveredFields.Add(_currentField);
         }
 
@@ -48,10 +51,13 @@ namespace MowingMachine.Models
             var offsetRight = offset.Add(1, 0);
             var offsetBottom = offset.Add(0, -1);
             var offsetLeft = offset.Add(-1, 0);
+
+            var top = _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetTop)) ??
+                      new Field(fov.TopCasted, offsetTop);
             
             var neighbors = new List<Field>
             {
-                _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetTop)) ?? new Field(fov.TopCasted, offsetTop),
+                top,
                 _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetRight)) ?? new Field(fov.RightCasted, offsetRight),
                 _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetBottom)) ?? new Field(fov.BottomCasted, offsetBottom),
                 _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetLeft)) ?? new Field(fov.LeftCasted, offsetLeft),
@@ -67,15 +73,33 @@ namespace MowingMachine.Models
 
             if (_mowingSteps.Any())
             {
-                _currentFieldType = _mapManager.MoveMowingMachine(_mowingSteps.Dequeue(), _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType);
+                _tempOffset ??= _currentField.Offset;
+                
+                var step = _mowingSteps.Dequeue();
+                var (x, y) = MowingMachineService.TranslateDirectionToOffset(step.MoveDirection);
+                _tempOffset = _tempOffset.Add(new Offset(x, y));
+                
+                _currentFieldType = _mapManager.MoveMowingMachine(step, _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType);
 
                 if (!_mowingSteps.Any())
                 {
-                    _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(1, -1), _currentFieldType);
+                    _currentField = GetField(_mapManager.GetFieldsOfView(), _tempOffset, _currentFieldType);
+                    _currentField.IsVisited = true;
                     
-                    // Update neighbor fields
-                    _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
-                    _discoveredFields.Add(_currentField);
+                    if (_discoveredFields.Any(f => f.Offset.CompareTo(_currentField.Offset)))
+                    {
+                        _discoveredFields.Move(_discoveredFields.First(f => f.Offset.CompareTo(_currentField.Offset)), _discoveredFields.Count);
+                        // Unsure if this should stay commented
+                        // NoteNextMove(nextStep, newOffset);
+                    }
+                    else
+                    {
+                        // Update neighbor fields
+                        _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
+                        _discoveredFields.Add(_currentField);
+
+                        _tempOffset = null;
+                    }
                 }
                 
                 return false;
@@ -203,9 +227,10 @@ namespace MowingMachine.Models
             // Unsure
             _currentFacingDirection = nextStep.MoveDirection;
             // _currentFacingDirection = steps.Last().MoveDirection;
-            
-            if (_currentField.Offset.CompareTo(new Offset(0,0)))
-                Console.WriteLine("test");
+
+
+            // if (_currentField.Offset.CompareTo(new Offset(0, 0)))
+            //     _currentField.IsVisited = true;
 
             var oldOffset = _discoveredFields.Last().Offset;
             var newOffset = oldOffset.Add(new Offset(nextStep.MoveDirection));
@@ -277,7 +302,7 @@ namespace MowingMachine.Models
 
             bool GetNextNeighborField(out (Field, MoveDirection) result)
             {
-                var fieldIndex = _currentField.NeighborFields?.FindIndex(f => !f.IsVisited && f.CanBeWalkedOn());
+                var fieldIndex = _currentField.NeighborFields?.FindIndex(f => !f.IsVisited && f.CanBeWalkedOn() && f.Type is not FieldType.ChargingStation);
                 result = (null, MoveDirection.Bottom);
                 
                 if (!fieldIndex.HasValue)
