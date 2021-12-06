@@ -115,7 +115,7 @@ namespace MowingMachine.Services
             if (offset.CompareTo(new Offset(0, -1)))
                 return MoveDirection.Bottom;
             if (offset.CompareTo(new Offset(-1, 0)))
-                return MoveDirection.Left;
+                return MoveDirection.Bottom;
 
             throw new ArgumentException("Offset was beyond");
         }
