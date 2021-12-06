@@ -13,7 +13,7 @@
                 <ColumnDefinition Width="1.5*" />
             </Grid.ColumnDefinitions>
 
-            <Frame Name="SampleMapFrame">
+            <Frame Name="SampleMapFrame" NavigationUIVisibility="Hidden">
             </Frame>
 
             <Grid Grid.Column="1">

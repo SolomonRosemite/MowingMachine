@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using MowingMachine.Models;
 using MowingMachine.Services;
@@ -31,7 +32,7 @@ namespace MowingMachine
         }
         
         
-        public void ExecuteStep()
+        public bool ExecuteStep()
         {
             var isComplete = mowingMachine.PerformMove();
 
@@ -39,6 +40,8 @@ namespace MowingMachine
             {
                 // Todo: Handle...
             }
+
+            return isComplete;
         }
         
         private void CreateDefinitions(IReadOnlyList<ColumnDefinition> columnDefinitions, IReadOnlyList<RowDefinition> rowDefinitions)
@@ -51,12 +54,14 @@ namespace MowingMachine
         }
 
         private void Render(IEnumerable<int[]> map)
-        {
-            var elements = Common.GetUiElements(map.Reverse().ToArray());
-            
-            SimulationGrid.Children.Clear();
-            foreach (var uiElement in elements)
-                SimulationGrid.Children.Add(uiElement);
+        {          
+            Application.Current.Dispatcher.Invoke(delegate{
+                var elements = Common.GetUiElements(map.Reverse().ToArray());
+                
+                SimulationGrid.Children.Clear();
+                foreach (var uiElement in elements)
+                    SimulationGrid.Children.Add(uiElement);
+            });
         }
         
         private void UpdateMap(object _, MapManager.OnUpdateMapEventArgs args)

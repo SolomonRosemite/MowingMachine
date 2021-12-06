@@ -116,6 +116,7 @@ namespace MowingMachine.Models
             if (!calculatedSteps.Any())
             {
                 Complete();
+                return true;
             }
             
             var needsToRefuelFirst = NeedsToRefuel(calculatedSteps);

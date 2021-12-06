@@ -37,7 +37,7 @@ namespace MowingMachine.Services
                 for (int y = 0; y < mapSample.Length; y++)
                 {
                     FieldType type = (FieldType)mapSample[x][y];
-                    
+                
                     var element = new Button
                     {
                         Content = new Image
@@ -47,14 +47,14 @@ namespace MowingMachine.Services
                             Tag = type,
                         },
                     };
-                    
+                
                     Grid.SetRow(element, x);
                     Grid.SetColumn(element, y);
 
                     elements[count++] = element;
                 }
             }
-
+            
             return elements;
         }
 
