@@ -11,7 +11,7 @@ using MowingMachine.Models;
 
 namespace MowingMachine.Services
 {
-    public static class MowingMachineService
+    public static class Common
     {
         public static (ColumnDefinition[], RowDefinition[]) GenerateDefinitions(int columns, int rows)
         {
@@ -58,17 +58,6 @@ namespace MowingMachine.Services
             return elements;
         }
 
-        public static (int, int) TranslateDirection(MoveDirection direction)
-        {
-            return direction switch
-            {
-                MoveDirection.Top => (1, 0),
-                MoveDirection.Left => (0, -1),
-                MoveDirection.Right => (0, 1),
-                MoveDirection.Bottom => (-1, 0),
-            };
-        }
-
         private static BitmapImage FieldTypeToItem(FieldType fieldType)
         {
             return fieldType switch
@@ -92,32 +81,6 @@ namespace MowingMachine.Services
             if (image.Height < -1) { }
             
             return image;
-        }
-        
-        public static (int, int) TranslateDirectionToOffset(MoveDirection direction)
-        {
-            return direction switch
-            {
-                MoveDirection.Top => (0, 1),
-                MoveDirection.Right => (1, 0),
-                MoveDirection.Bottom => (0, -1),
-                MoveDirection.Left => (-1, 0),
-                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
-            };
-        }
-
-        public static MoveDirection TranslateOffsetToDirection(Offset offset)
-        {
-            if (offset.CompareTo(new Offset(0, 1)))
-                return MoveDirection.Top;
-            if (offset.CompareTo(new Offset(1, 0)))
-                return MoveDirection.Right;
-            if (offset.CompareTo(new Offset(0, -1)))
-                return MoveDirection.Bottom;
-            if (offset.CompareTo(new Offset(-1, 0)))
-                return MoveDirection.Left;
-
-            throw new ArgumentException("Offset was beyond");
         }
     }
 }

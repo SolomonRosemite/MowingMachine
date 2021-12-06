@@ -18,7 +18,7 @@ namespace MowingMachine.Services
         {
             try
             {
-                var (addX, addY) = MowingMachineService.TranslateDirection(direction);
+                var (addX, addY) = direction.TranslateDirection();
 
                 x += addX;
                 y += addY;
@@ -33,7 +33,7 @@ namespace MowingMachine.Services
         
         public static (int, int) GetTranslatedCoordinate(this int[][] _, int x, int y, MoveDirection direction)
         {
-            var (addX, addY) = MowingMachineService.TranslateDirection(direction);
+            var (addX, addY) = direction.TranslateDirection();
             x += addX;
             y += addY;
 
@@ -42,7 +42,7 @@ namespace MowingMachine.Services
         
         public static Coordinate GetTranslatedCoordinate(this Coordinate coordinate, MoveDirection direction)
         {
-            var (addX, addY) = MowingMachineService.TranslateDirection(direction);
+            var (addX, addY) = direction.TranslateDirection();
 
             return new Coordinate(coordinate.X + addX, coordinate.Y + addY);;
         }
@@ -64,6 +64,43 @@ namespace MowingMachine.Services
             };
         }
         
+        public static MoveDirection TranslateOffsetToDirection(this Offset offset)
+        {
+            if (offset.CompareTo(new Offset(0, 1)))
+                return MoveDirection.Top;
+            if (offset.CompareTo(new Offset(1, 0)))
+                return MoveDirection.Right;
+            if (offset.CompareTo(new Offset(0, -1)))
+                return MoveDirection.Bottom;
+            if (offset.CompareTo(new Offset(-1, 0)))
+                return MoveDirection.Left;
+
+            throw new ArgumentException("Offset was beyond");
+        }
+
+        private static (int, int) TranslateDirection(this MoveDirection direction)
+        {
+            return direction switch
+            {
+                MoveDirection.Top => (1, 0),
+                MoveDirection.Left => (0, -1),
+                MoveDirection.Right => (0, 1),
+                MoveDirection.Bottom => (-1, 0),
+            };
+        }
+        
+        public static (int, int) TranslateDirectionToOffset(this MoveDirection direction)
+        {
+            return direction switch
+            {
+                MoveDirection.Top => (0, 1),
+                MoveDirection.Right => (1, 0),
+                MoveDirection.Bottom => (0, -1),
+                MoveDirection.Left => (-1, 0),
+                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+            };
+        }
+        
         public static void Move<T>(this List<T> list, T item, int newIndex)
         {
             if (item != null)
@@ -79,7 +116,6 @@ namespace MowingMachine.Services
                     list.Insert(newIndex, item);
                 }
             }
-
         }
     }
 }

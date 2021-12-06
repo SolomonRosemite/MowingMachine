@@ -2,17 +2,17 @@
 {
     public class FieldOfView
     {
-        private readonly int[][] _fov;
+        private readonly int[][] fov;
 
         public FieldOfView(int[][] fov)
         {
-            this._fov = fov;
+            this.fov = fov;
         }
 
-        public FieldType CenterCasted => (FieldType) _fov[1][1];
-        public FieldType TopCasted => (FieldType) _fov[2][1];
-        public FieldType LeftCasted => (FieldType) _fov[1][0];
-        public FieldType RightCasted => (FieldType) _fov[1][2];
-        public FieldType BottomCasted => (FieldType) _fov[0][1];
+        public FieldType CenterCasted => (FieldType) fov[1][1];
+        public FieldType TopCasted => (FieldType) fov[2][1];
+        public FieldType LeftCasted => (FieldType) fov[1][0];
+        public FieldType RightCasted => (FieldType) fov[1][2];
+        public FieldType BottomCasted => (FieldType) fov[0][1];
     }
 }

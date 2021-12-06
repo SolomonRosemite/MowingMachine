@@ -12,7 +12,7 @@ namespace MowingMachine.Models
         
         public Offset(MoveDirection direction)
         {
-            var (x, y) = MowingMachineService.TranslateDirectionToOffset(direction);
+            var (x, y) = direction.TranslateDirectionToOffset();
             
             X = x;
             Y = y;

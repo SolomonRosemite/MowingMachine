@@ -53,10 +53,11 @@ namespace MowingMachine.Models
             if (_currentlyWorkingMowingStep.Turns.Count != 0)
             {
                 var moveDirection = _currentlyWorkingMowingStep.Turns.Dequeue();
-                Console.WriteLine($"Turned mowing machine in direction: {moveDirection}");
+                Console.WriteLine($"Turned mowing machine in direction: {moveDirection}.");
             }
             else
             {
+                Console.WriteLine($"Mowing machine moving forward.");
                 Update();
                 _currentlyWorkingMowingStep = null;
             }

@@ -11,30 +11,29 @@ namespace MowingMachine
     /// </summary>
     public partial class SampleMapPage : Page
     {
-        private readonly MyMowingMachine _mowingMachine;
-        private readonly MapManager _mapManager;
+        private readonly MyMowingMachine mowingMachine;
 
-        public SampleMapPage(int[][] sample)
+        public SampleMapPage(int[][] map)
         {
             InitializeComponent();
 
-            _mapManager = new MapManager(sample);
-            _mowingMachine = new MyMowingMachine(_mapManager);
+            var mapManager = new MapManager(map);
+            mowingMachine = new MyMowingMachine(mapManager);
 
-            _mapManager.OnUpdateMap += UpdateMap;
+            mapManager.OnUpdateMap += UpdateMap;
             
             var (columnDefinitions, rowDefinitions) =
-                MowingMachineService.GenerateDefinitions(sample.Length, sample.Length);
+                Common.GenerateDefinitions(map.Length, map.Length);
 
             CreateDefinitions(columnDefinitions, rowDefinitions);
             
-            Render(sample);
+            Render(map);
         }
         
         
         public void ExecuteStep()
         {
-            var isComplete = _mowingMachine.PerformMove();
+            var isComplete = mowingMachine.PerformMove();
 
             if (isComplete)
             {
@@ -51,18 +50,18 @@ namespace MowingMachine
                 SimulationGrid.ColumnDefinitions.Add(columnDefinitions[i]);
         }
 
-        private void UpdateMap(object _, MapManager.OnUpdateMapEventArgs args)
-        {
-            Render(args.Map);
-        }
-
         private void Render(IEnumerable<int[]> map)
         {
-            var elements = MowingMachineService.GetUiElements(map.Reverse().ToArray());
+            var elements = Common.GetUiElements(map.Reverse().ToArray());
             
             SimulationGrid.Children.Clear();
             foreach (var uiElement in elements)
                 SimulationGrid.Children.Add(uiElement);
+        }
+        
+        private void UpdateMap(object _, MapManager.OnUpdateMapEventArgs args)
+        {
+            Render(args.Map);
         }
     }
 }
