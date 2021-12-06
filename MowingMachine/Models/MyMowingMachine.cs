@@ -107,7 +107,6 @@ namespace MowingMachine.Models
             
             if (_discoveredFields.All(f => f.IsVisited))
             {
-                Complete();
                 return true;
             }
             
@@ -118,6 +117,11 @@ namespace MowingMachine.Models
             }
 
             var calculatedSteps = CalculateNextMove();
+
+            if (!calculatedSteps.Any())
+            {
+                Complete();
+            }
             
             var needsToRefuelFirst = NeedsToRefuel(calculatedSteps);
             if (needsToRefuelFirst)
@@ -196,11 +200,11 @@ namespace MowingMachine.Models
                     continue;
                 
                 offsets.Clear();
-                offsets.AddRange(neighbors.Where(nf => !nf.IsVisited && nf.CanBeWalkedOn()));
+                offsets.AddRange(neighbors.Where(nf => !nf.IsVisited && nf.CanBeWalkedOn() && nf.Type != FieldType.ChargingStation));
             }
             
             var unvisitedFields = _discoveredFields.Single(f => f.Offset.CompareTo(offset))
-                .NeighborFields!.Where(nf => !nf.IsVisited && nf.CanBeWalkedOn())
+                .NeighborFields!.Where(nf => !nf.IsVisited && nf.CanBeWalkedOn() && nf.Type != FieldType.ChargingStation)
                 .ToList();
             
             _moves.Add((step, unvisitedFields, offset));
@@ -256,7 +260,6 @@ namespace MowingMachine.Models
 
         private List<MowingStep> CalculateNextMove()
         {
-            // Todo: Double check if the inversion is right.
             var successful = GetNextNeighborField(out var values);
             var (_, direction) = values;
             
@@ -289,11 +292,11 @@ namespace MowingMachine.Models
                         
                         var stepFinal = CalculateStepExpense(finalDirection, currentDirection, prevFieldStep.FieldType);
                         steps.Add(stepFinal);
-                        break;
+                        return steps;
                     }
                 }
 
-                return steps;
+                return new List<MowingStep>();
             }
             
             var nextStep = CalculateStepExpense(direction, _currentFacingDirection, _currentFieldType);
