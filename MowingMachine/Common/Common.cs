@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Xaml;
 using MowingMachine.Models;
 
-namespace MowingMachine.Services
+namespace MowingMachine.Common
 {
     public static class Common
     {

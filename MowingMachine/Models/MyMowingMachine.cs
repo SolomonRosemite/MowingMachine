@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
-using MowingMachine.Services;
+using MowingMachine.Common;
 
 namespace MowingMachine.Models
 {
@@ -36,17 +36,11 @@ namespace MowingMachine.Models
             
             // Add initial fields
             _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0), FieldType.ChargingStation);
-            // _currentField.IsVisited = true;
             _discoveredFields.Add(_currentField);
         }
 
         private Field GetField(FieldOfView fov, Offset offset, FieldType fieldType)
         {
-            if (fieldType == FieldType.ChargingStation)
-            {
-                    
-            }
-            
             var offsetTop = offset.Add(0, 1);
             var offsetRight = offset.Add(1, 0);
             var offsetBottom = offset.Add(0, -1);
@@ -101,9 +95,7 @@ namespace MowingMachine.Models
             }
             
             if (_discoveredFields.All(f => f.IsVisited))
-            {
                 return true;
-            }
             
             if (_isGoingToChargingStation)
             {

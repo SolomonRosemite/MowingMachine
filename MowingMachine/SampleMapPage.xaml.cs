@@ -3,7 +3,6 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using MowingMachine.Models;
-using MowingMachine.Services;
 
 namespace MowingMachine
 {
@@ -24,7 +23,7 @@ namespace MowingMachine
             mapManager.OnUpdateMap += UpdateMap;
             
             var (columnDefinitions, rowDefinitions) =
-                Common.GenerateDefinitions(map.Length, map.Length);
+                Common.Common.GenerateDefinitions(map.Length, map.Length);
 
             CreateDefinitions(columnDefinitions, rowDefinitions);
             
@@ -56,7 +55,7 @@ namespace MowingMachine
         private void Render(IEnumerable<int[]> map)
         {          
             Application.Current.Dispatcher.Invoke(delegate{
-                var elements = Common.GetUiElements(map.Reverse().ToArray());
+                var elements = Common.Common.GetUiElements(map.Reverse().ToArray());
                 
                 SimulationGrid.Children.Clear();
                 foreach (var uiElement in elements)

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using MowingMachine.Models;
 
-namespace MowingMachine.Services
+namespace MowingMachine.Common
 {
     public static class ExtensionMethods
     {

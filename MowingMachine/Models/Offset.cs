@@ -1,4 +1,4 @@
-﻿using MowingMachine.Services;
+﻿using MowingMachine.Common;
 
 namespace MowingMachine.Models
 {

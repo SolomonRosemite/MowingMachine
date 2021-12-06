@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using MowingMachine.Services;
+using MowingMachine.Common;
 
 namespace MowingMachine.Models
 {

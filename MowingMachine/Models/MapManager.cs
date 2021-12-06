@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Principal;
 using System.Threading;
 using System.Windows.Documents;
-using MowingMachine.Services;
+using MowingMachine.Common;
 
 namespace MowingMachine.Models
 {
@@ -57,7 +57,7 @@ namespace MowingMachine.Models
             }
             else
             {
-                Console.WriteLine($"Mowing machine moving forward.");
+                Console.WriteLine("Mowing machine moving forward.");
                 Update();
                 _currentlyWorkingMowingStep = null;
             }
