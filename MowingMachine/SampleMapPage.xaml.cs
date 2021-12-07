@@ -11,14 +11,14 @@ namespace MowingMachine
     /// </summary>
     public partial class SampleMapPage : Page
     {
-        private readonly MyMowingMachine mowingMachine;
+        private readonly MyMowingMachine _mowingMachine;
 
-        public SampleMapPage(int[][] map)
+        public SampleMapPage(int[][] map, double mowingMachineEnergy)
         {
             InitializeComponent();
 
             var mapManager = new MapManager(map);
-            mowingMachine = new MyMowingMachine(mapManager);
+            _mowingMachine = new MyMowingMachine(mapManager, mowingMachineEnergy);
 
             mapManager.OnUpdateMap += UpdateMap;
             
@@ -30,10 +30,9 @@ namespace MowingMachine
             Render(map);
         }
         
-        
         public bool ExecuteStep()
         {
-            var isComplete = mowingMachine.PerformMove();
+            var isComplete = _mowingMachine.PerformMove();
 
             if (isComplete)
             {

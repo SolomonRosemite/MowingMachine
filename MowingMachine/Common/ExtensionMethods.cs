@@ -40,13 +40,6 @@ namespace MowingMachine.Common
             return (x, y);
         }
         
-        public static Coordinate GetTranslatedCoordinate(this Coordinate coordinate, MoveDirection direction)
-        {
-            var (addX, addY) = direction.TranslateDirection();
-
-            return new Coordinate(coordinate.X + addX, coordinate.Y + addY);;
-        }
-
         public static bool AreNeighbors(this Offset o1, Offset o2)
         {
             return Math.Abs(o1.X - o2.X) + Math.Abs(o1.Y - o2.Y) <= 1;

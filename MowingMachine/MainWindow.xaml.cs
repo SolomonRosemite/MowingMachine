@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Timers;
 using System.Windows;
 
@@ -10,9 +9,9 @@ namespace MowingMachine
     /// </summary>
     public partial class MainWindow : Window
     {
-        private SampleMapPage mapPage;
-        private Timer timer;
-        private bool running;
+        private SampleMapPage _mapPage;
+        private Timer _timer;
+        private bool _running;
         
         public MainWindow()
         {
@@ -23,9 +22,9 @@ namespace MowingMachine
 
         private void InitializeApp()
         {
-            timer?.Stop();
+            _timer?.Stop();
             
-            int[][] sample = 
+            int[][] mapSample =
             {
                 new [] { 1, 1, 1, 1, 1, 1, 1, 6, 6, 6 },
                 new [] { 1, 1, 6, 6, 6, 1, 1, 1, 1, 6 },
@@ -39,46 +38,43 @@ namespace MowingMachine
                 new [] { 1, 1, 3, 1, 1, 1, 0, 0, 0, 0 },
             };
 
-            sample = sample.Reverse().ToArray();
+            mapSample = mapSample.Reverse().ToArray();
 
-            mapPage = new SampleMapPage(sample);
-            SampleMapFrame.Content = mapPage;
+            _mapPage = new SampleMapPage(mapSample, 1200);
+            SampleMapFrame.Content = _mapPage;
         }
 
         private void StartSimulationClick(object sender, RoutedEventArgs e)
         {
-            running = !running;
+            _running = !_running;
             
             UpdateUi();
             
-            if (running)
+            if (_running)
                 RunSimulation();
             else
                 InitializeApp();
         }
 
-        private void UpdateUi()
-        {
-            StartButton.Content = running ? "Stop simulation" : "Start again simulation";
-        }
+        private void UpdateUi() => StartButton.Content = _running ? "Stop simulation" : "Start again simulation";
 
         private void RunSimulation()
         {
-            timer = new Timer(100);
-            timer.AutoReset = true;
-            timer.Elapsed += TimerOnElapsed;
-            timer.Start();
+            _timer = new Timer(100);
+            _timer.AutoReset = true;
+            _timer.Elapsed += TimerOnElapsed;
+            _timer.Start();
         }
 
         private void TimerOnElapsed(object sender, ElapsedEventArgs e)
         {
-            var complete = mapPage.ExecuteStep();
+            var complete = _mapPage.ExecuteStep();
 
             if (complete)
             {
                 Application.Current.Dispatcher.Invoke(delegate {
                     StartSimulationClick(null, null);
-                    running = true;
+                    _running = true;
                 });
             }
         }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
+using System.Threading;
 using MowingMachine.Common;
 
 namespace MowingMachine.Models
@@ -26,13 +27,14 @@ namespace MowingMachine.Models
         private Field _currentField;
 
         private bool _isGoingToChargingStation;
-        // private bool _isMowing;
-
         private Offset _tempOffset;
+        private double _charge;
+        private List<Offset> test;
 
-        public MyMowingMachine(MapManager mapManager)
+        public MyMowingMachine(MapManager mapManager, double charge)
         {
             _mapManager = mapManager;
+            _charge = charge;
             
             // Add initial fields
             _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0), FieldType.ChargingStation);
@@ -57,11 +59,28 @@ namespace MowingMachine.Models
             return new Field(fieldType, offset, neighbors);
         }
 
+        private int jajd = 40;
+        
         public bool PerformMove()
         {
             if (!_mapManager.Verify())
                 return false;
 
+            if (jajd-- == 0)
+            {
+                new Thread(() =>
+                {
+                    var z = CalculatePathToGoal(_currentField.Offset,
+                        _discoveredFields.First(f => f.Type == FieldType.ChargingStation)
+                            .Offset);
+                
+                    Console.WriteLine(z);
+
+                    test = z;
+                }).Start();
+            }
+            
+            
             if (_mowingSteps.Any())
             {
                 _tempOffset ??= _currentField.Offset;
@@ -200,6 +219,7 @@ namespace MowingMachine.Models
 
         private bool NeedsToRefuel(List<MowingStep> steps)
         {
+            // Calculate there and back
             // Todo: Check one step ahead if the fuel would be enough to go back to the charging station.
             return false;
         }
@@ -311,13 +331,78 @@ namespace MowingMachine.Models
             if (fov.CenterCasted is FieldType.ChargingStation)
             {
                 // Todo: Recharge here.
-
                 _isGoingToChargingStation = false;
                 return;
             }
             
             // Todo: Keep moving to the charging station.
-            // We can use dijkstra with the help of our discovered list maybe?
+            // We can use dijkstra or bfs with the help of our discovered list maybe?
+        }
+        
+        // Breadth first search
+        public List<Offset> CalculatePathToGoal(Offset start, Offset goal)
+        {
+            var visitedCoordinates = new Dictionary<string, Offset>();
+            var nextCoordinatesToVisit = new Queue<OffsetInfo>();
+            
+            nextCoordinatesToVisit.Enqueue(new OffsetInfo(start, null));
+        
+            while (nextCoordinatesToVisit.Count != 0)
+            {
+                var cellInfo = nextCoordinatesToVisit.Dequeue();
+        
+                if (GetNeighborCells(cellInfo))
+                    break;
+            }
+            
+            var tracedPath = new List<Offset>();
+        
+            var currenCoordinate = goal;
+            while (visitedCoordinates.TryGetValue(currenCoordinate.ToString(), out var coord))
+            {
+                if (coord == null)
+                    break;
+                
+                tracedPath.Add(currenCoordinate);
+                currenCoordinate = coord;
+            }
+            
+            return tracedPath;
+        
+            bool GetNeighborCells(OffsetInfo info)
+            {
+                if (!IsValidField(info.CurrentOffset))
+                    return false;
+        
+                // If it already exists, dont add again
+                if (visitedCoordinates.ContainsKey(info.CurrentOffset.ToString()))
+                   return false;
+        
+                visitedCoordinates[info.CurrentOffset.ToString()] = info.PrevOffset;
+        
+                if (info.CurrentOffset.X == goal.X && info.CurrentOffset.Y == goal.Y)
+                    return true;
+            
+                nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X, info.CurrentOffset.Y + 1, info.CurrentOffset));
+                nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X + 1, info.CurrentOffset.Y, info.CurrentOffset));
+                nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X, info.CurrentOffset.Y - 1, info.CurrentOffset));
+                nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X - 1, info.CurrentOffset.Y, info.CurrentOffset));
+                return false;
+            }
+        
+            bool IsValidField(Offset offset)
+            {
+                var value = _discoveredFields
+                    .FirstOrDefault(f => f.Offset.CompareTo(new Offset(offset.X, offset.Y)))?.Type;
+
+                value ??= FieldType.Water;
+
+                if ((int) value == -1)
+                {
+                }
+                
+                return (int) value != -1 && (FieldType) value is not FieldType.Water;
+            }
         }
     }
 }

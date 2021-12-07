@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Principal;
-using System.Threading;
-using System.Windows.Documents;
 using MowingMachine.Common;
 
 namespace MowingMachine.Models
@@ -29,12 +24,12 @@ namespace MowingMachine.Models
         {
             _currentlyWorkingMowingStep = step;
             
-            var mowingMachineCoordinate = GetMowingMachineCoordinate();
-            var (x, y) = Map.GetTranslatedCoordinate(mowingMachineCoordinate.X, mowingMachineCoordinate.Y, step.MoveDirection);
+            var (mowingMachineX, mowingMachineY) = GetMowingMachineCoordinate();
+            var (x, y) = Map.GetTranslatedCoordinate(mowingMachineX, mowingMachineY, step.MoveDirection);
 
             var nextPreviousField = (FieldType) Map[x][y];
             
-            Map[mowingMachineCoordinate.X][mowingMachineCoordinate.Y] = (int) previousField;
+            Map[mowingMachineX][mowingMachineY] = (int) previousField;
             Map[x][y] = (int) FieldType.MowingMachine;
 
             return nextPreviousField;
@@ -67,8 +62,8 @@ namespace MowingMachine.Models
 
         public FieldOfView GetFieldsOfView()
         {
-            var coordinate = GetMowingMachineCoordinate();
-            return new FieldOfView(GetFieldsAroundCoordinate(coordinate.X, coordinate.Y));
+            var (x, y) = GetMowingMachineCoordinate();
+            return new FieldOfView(GetFieldsAroundCoordinate(x, y));
         }
         
         private int[][] GetFieldsAroundCoordinate(int xCoordinate, int yCoordinate)
@@ -96,7 +91,7 @@ namespace MowingMachine.Models
             return map;
         }
         
-        private Coordinate GetMowingMachineCoordinate()
+        private (int, int) GetMowingMachineCoordinate()
         {
             for (int x = 0; x < Map.Length; x++)
             {
@@ -105,7 +100,7 @@ namespace MowingMachine.Models
                     FieldType type = (FieldType)Map[x][y];
 
                     if (type == FieldType.MowingMachine)
-                        return new Coordinate(x, y);
+                        return (x, y);
                 }
             }
 

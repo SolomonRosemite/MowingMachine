@@ -28,14 +28,6 @@ namespace MowingMachine.Models
         public List<Field>? NeighborFields { get; private set;  }
         public bool IsVisited { get; set;  }
 
-        public void UpdateNeighbors(List<Field> neighborFields)
-        {
-            if (NeighborFields is not null)
-                throw new ArgumentException("Tried to update existing neighbors.");
-            
-            NeighborFields = neighborFields;
-        }
-        
         public void UpdateFieldNeighbor(Field field)
         {
             if (NeighborFields is null)
