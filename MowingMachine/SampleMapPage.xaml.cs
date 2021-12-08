@@ -13,13 +13,11 @@ namespace MowingMachine
     public partial class SampleMapPage : Page
     {
         private readonly MyMowingMachine _mowingMachine;
-        public event EventHandler<MapManager.OnUpdateMapEventArgs> OnUpdateMap;
-        
-        public SampleMapPage(int[][] map, double mowingMachineEnergy)
+        public SampleMapPage(int[][] map, double mowingMachineEnergy, MainWindow mainWindow)
         {
             InitializeComponent();
 
-            var mapManager = new MapManager(map, mowingMachineEnergy);
+            var mapManager = new MapManager(map, mowingMachineEnergy, mainWindow);
             _mowingMachine = new MyMowingMachine(mapManager, mowingMachineEnergy);
 
             mapManager.OnUpdateMap += UpdateMap;
@@ -67,7 +65,6 @@ namespace MowingMachine
         private void UpdateMap(object _, MapManager.OnUpdateMapEventArgs args)
         {
             Render(args.Map);
-            // OnUpdateMap?.Invoke(this, args);
         }
     }
 }

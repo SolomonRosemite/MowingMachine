@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Timers;
 using System.Windows;
 using MowingMachine.Models;
@@ -10,10 +12,11 @@ namespace MowingMachine
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly double _mowingMachineCharge = 1200;
+        private int[][] _initialMapSample;
         private SampleMapPage _mapPage;
         private Timer _timer;
         private bool _running;
-        private int[][] _initialMapSample;
         
         public MainWindow()
         {
@@ -40,27 +43,41 @@ namespace MowingMachine
                 new [] { 1, 1, 3, 1, 1, 1, 0, 0, 0, 0 },
             };
 
-            _initialMapSample = (int[][]) mapSample.Clone();
+            _initialMapSample = mapSample.Select(a => a.ToArray()).ToArray();;
             mapSample = mapSample.Reverse().ToArray();
 
-            _mapPage = new SampleMapPage(mapSample, 1200);
+            _mapPage = new SampleMapPage(mapSample, _mowingMachineCharge, this);
             SampleMapFrame.Content = _mapPage;
-            
-            // _mapPage.OnUpdateMap += Ok;
         }
 
-        private void Ok(object sender, MapManager.OnUpdateMapEventArgs e)
+        public void UpdateValues(MapManager.OnUpdateMapEventArgs e)
         {
-            var totalGrass = GetCount(_initialMapSample, FieldType.Grass);
-            var totalMowedGrass = GetCount(e.Map, FieldType.MowedLawn);
+            var totalGrass = GetCount(_initialMapSample, FieldType.Grass) - 1;
+            var totalMowedGrass = GetCount((int[][]) e.Map.Clone(), FieldType.MowedLawn);
             
-            // MowedGrassCountProgressBar.Value = totalMowedGrass / totalGrass;
-            // ChargeProgressBar.Value = e.Charge;
+            Application.Current.Dispatcher.Invoke(delegate
+            {
+                // Update charge
+                ChargeProgressBar.Value = Math.Round(e.Charge / _mowingMachineCharge * 100, 2);
+                ChargeLabel.Content = $"Charge: {ChargeProgressBar.Value}%";
+                
+                var newValue = totalMowedGrass / totalGrass * 100;
+                MowedGrassCountProgressBar.Value = Math.Round(Math.Max(newValue, MowedGrassCountProgressBar.Value), 2);
+                MowedGrassCountLabel.Content = $"Mowed lawn: {MowedGrassCountProgressBar.Value}%";
+            });
         }
 
-        private double GetCount(int[][] map, FieldType type)
+        private double GetCount(IReadOnlyList<int[]> map, FieldType type)
         {
-            return map.Sum(t1 => map.Where((t, y) => (FieldType) t1[y] == type).Count());
+            double count = 0;
+            
+            for (int x = 0; x < map.Count; x++)
+                for (int y = 0; y < map.Count; y++)
+                    if (map[x][y] == (int) type)
+                        count++;
+            
+            return count;
+            // return map.Sum(t1 => map.Where((t, y) => (FieldType) t1[y] == type).Count());
         }
 
         private void StartSimulationClick(object sender, RoutedEventArgs e)

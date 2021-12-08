@@ -13,13 +13,15 @@ namespace MowingMachine.Models
             public double Charge;
         }
         
-        public MapManager(int[][] map, double fuel)
+        public MapManager(int[][] map, double fuel, MainWindow mainWindow)
         {
             this.Map = map;
             _currentFuel = fuel;
+            _mainWindow = mainWindow;
         }
 
         private MowingStep _currentlyWorkingMowingStep;
+        private readonly MainWindow _mainWindow;
         private double _currentFuel;
         private int[][] Map { get; }
         
@@ -41,7 +43,9 @@ namespace MowingMachine.Models
 
         private void Update()
         {
-            OnUpdateMap?.Invoke(this, new OnUpdateMapEventArgs { Map = (int[][]) this.Map.Clone(), Charge = _currentFuel});
+            var args = new OnUpdateMapEventArgs {Map = (int[][]) this.Map.Clone(), Charge = _currentFuel};
+            _mainWindow.UpdateValues(args);
+            OnUpdateMap?.Invoke(this, args);
         }
 
         public bool Verify()

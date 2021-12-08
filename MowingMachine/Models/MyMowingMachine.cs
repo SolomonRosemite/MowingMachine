@@ -97,7 +97,6 @@ namespace MowingMachine.Models
 
             var stepsToChargingStation = CalculateStepsToGoal(calculatedSteps.Last().MoveDirection, new Offset(0, 0));
 
-            Console.WriteLine($"Charge: {_charge}");
             var needsToRefuelFirst = NeedsToRefuel(calculatedSteps, stepsToChargingStation);
             if (needsToRefuelFirst)
             {
