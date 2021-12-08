@@ -60,7 +60,7 @@ namespace MowingMachine
 
         private void RunSimulation()
         {
-            _timer = new Timer(100);
+            _timer = new Timer(10);
             _timer.AutoReset = true;
             _timer.Elapsed += TimerOnElapsed;
             _timer.Start();
@@ -68,17 +68,9 @@ namespace MowingMachine
 
         private void TimerOnElapsed(object sender, ElapsedEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(delegate {
-                var complete = _mapPage.ExecuteStep();
-                if (complete)
-                {
-                    Application.Current.Dispatcher.Invoke(delegate {
-                        StartSimulationClick(null, null);
-                        _running = true;
-                    });
-                }
-            });
-
+            var complete = _mapPage.ExecuteStep();
+            if (complete)
+                _timer.Stop();
         }
     }
 }
