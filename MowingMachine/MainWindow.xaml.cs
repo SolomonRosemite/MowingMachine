@@ -68,15 +68,17 @@ namespace MowingMachine
 
         private void TimerOnElapsed(object sender, ElapsedEventArgs e)
         {
-            var complete = _mapPage.ExecuteStep();
+            Application.Current.Dispatcher.Invoke(delegate {
+                var complete = _mapPage.ExecuteStep();
+                if (complete)
+                {
+                    Application.Current.Dispatcher.Invoke(delegate {
+                        StartSimulationClick(null, null);
+                        _running = true;
+                    });
+                }
+            });
 
-            if (complete)
-            {
-                Application.Current.Dispatcher.Invoke(delegate {
-                    StartSimulationClick(null, null);
-                    _running = true;
-                });
-            }
         }
     }
 }

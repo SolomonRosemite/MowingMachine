@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
+using System.Windows;
 using MowingMachine.Common;
 
 namespace MowingMachine.Models
@@ -23,13 +24,13 @@ namespace MowingMachine.Models
         private FieldType _currentFieldType = FieldType.ChargingStation;
         
         private MoveDirection _currentFacingDirection = MoveDirection.Left;
-        // private MoveDirection _currentDirection = MoveDirection.Left;
         private Field _currentField;
 
-        private bool _isGoingToChargingStation;
+        private Queue<MowingStep> _pathTheChargingStation = new();
+        
+        private bool _finalRunToChargingStation;
         private Offset _tempOffset;
         private double _charge;
-        private List<Offset> test;
 
         public MyMowingMachine(MapManager mapManager, double charge)
         {
@@ -59,28 +60,13 @@ namespace MowingMachine.Models
             return new Field(fieldType, offset, neighbors);
         }
 
-        private int jajd = 40;
+        private int test2 = 40;
         
         public bool PerformMove()
         {
             if (!_mapManager.Verify())
                 return false;
 
-            if (jajd-- == 0)
-            {
-                new Thread(() =>
-                {
-                    var z = CalculatePathToGoal(_currentField.Offset,
-                        _discoveredFields.First(f => f.Type == FieldType.ChargingStation)
-                            .Offset);
-                
-                    Console.WriteLine(z);
-
-                    test = z;
-                }).Start();
-            }
-            
-            
             if (_mowingSteps.Any())
             {
                 _tempOffset ??= _currentField.Offset;
@@ -116,7 +102,7 @@ namespace MowingMachine.Models
             if (_discoveredFields.All(f => f.IsVisited))
                 return true;
             
-            if (_isGoingToChargingStation)
+            if (_pathTheChargingStation.Any() || _finalRunToChargingStation)
             {
                 MoveToChargingStation();
                 return false;
@@ -129,10 +115,17 @@ namespace MowingMachine.Models
                 Complete();
                 return true;
             }
+
+            var a = A(calculatedSteps.Last().MoveDirection, _currentField.Offset);
             
-            var needsToRefuelFirst = NeedsToRefuel(calculatedSteps);
+            var needsToRefuelFirst = NeedsToRefuel(calculatedSteps, a);
             if (needsToRefuelFirst)
             {
+                foreach (var mowingStep in a)
+                {
+                    _pathTheChargingStation.Enqueue(mowingStep);
+                }
+                
                 MoveToChargingStation();
                 return false;
             }
@@ -140,7 +133,32 @@ namespace MowingMachine.Models
             PerformStep(calculatedSteps);
             return false;
         }
-        
+
+        private IEnumerable<MowingStep> A(MoveDirection startingDirection, Offset offset)
+        {
+            var path = CalculatePathToGoal(_currentField.Offset,
+                _discoveredFields.First(f => f.Type == FieldType.ChargingStation)
+                    .Offset);
+            
+            path.Add(_currentField.Offset);
+
+            var steps = new List<MowingStep>();
+            var currentDirection = startingDirection;
+            for (int i = path.Count - 2; i >= 0; i--)
+            {
+                var direction = path[i].Subtract(path[i + 1]).TranslateOffsetToDirection();
+
+                var step = CalculateStepExpense(direction,
+                    currentDirection,
+                    _discoveredFields.First(f => f.Offset.CompareTo(path[i])).Type);
+
+                currentDirection = direction;
+                steps.Add(step);
+            }
+
+            return steps;
+        }
+
         private static MowingStep CalculateStepExpense(MoveDirection direction, MoveDirection currentFacingDirection, FieldType currentFieldType)
         {
             var turns = new Queue<MoveDirection>();
@@ -217,11 +235,14 @@ namespace MowingMachine.Models
             Console.WriteLine("Mowing complete!");
         }
 
-        private bool NeedsToRefuel(List<MowingStep> steps)
+        private bool NeedsToRefuel(IEnumerable<MowingStep> stepsToNextField, IEnumerable<MowingStep> stepsToChangingStation)
         {
-            // Calculate there and back
-            // Todo: Check one step ahead if the fuel would be enough to go back to the charging station.
-            return false;
+            var totalRequestEnergy = stepsToNextField
+                                         .Select(s => s.TotalEnergyExpense).Sum() +
+                                     stepsToChangingStation
+                                         .Select(s => s.TotalEnergyExpense).Sum();
+            return test2-- == 1;
+            // return _charge >= totalRequestEnergy;
         }
 
         private void PerformStep(List<MowingStep> steps)
@@ -278,7 +299,6 @@ namespace MowingMachine.Models
                         currentDirection = step.MoveDirection;
                     }
                     
-                    
                     if (neighbors.Any())
                     {
                         var calculatedOffset = neighbors
@@ -304,10 +324,7 @@ namespace MowingMachine.Models
                 var fieldIndex = _currentField.NeighborFields?.FindIndex(f => !f.IsVisited && f.CanBeWalkedOn() && f.Type is not FieldType.ChargingStation);
                 result = (null, MoveDirection.Bottom);
                 
-                if (!fieldIndex.HasValue)
-                    return false;
-                
-                if (fieldIndex.Value == -1)
+                if (fieldIndex is null or -1)
                     return false;
 
                 result = (_currentField.NeighborFields[fieldIndex.Value], fieldIndex switch
@@ -324,23 +341,27 @@ namespace MowingMachine.Models
         
         private void MoveToChargingStation()
         {
-            _isGoingToChargingStation = true;
-            
-            var fov = _mapManager.GetFieldsOfView();
-
-            if (fov.CenterCasted is FieldType.ChargingStation)
+            if (!_pathTheChargingStation.Any())
             {
-                // Todo: Recharge here.
-                _isGoingToChargingStation = false;
+                _finalRunToChargingStation = false;
+                _currentField.Offset.UpdateOffset(new Offset(0, 0));
                 return;
             }
             
-            // Todo: Keep moving to the charging station.
-            // We can use dijkstra or bfs with the help of our discovered list maybe?
+            var nextStep = _pathTheChargingStation.Dequeue();
+
+            _finalRunToChargingStation = !_pathTheChargingStation.Any();
+            
+            _currentFacingDirection = nextStep.MoveDirection;
+
+            // var oldOffset = _discoveredFields.Last().Offset;
+            var newOffset = _currentField.Offset.Subtract(new Offset(nextStep.MoveDirection));
+            
+            _currentField = Move(nextStep, newOffset, _currentFieldType);
         }
         
         // Breadth first search
-        public List<Offset> CalculatePathToGoal(Offset start, Offset goal)
+        private List<Offset> CalculatePathToGoal(Offset start, Offset goal)
         {
             var visitedCoordinates = new Dictionary<string, Offset>();
             var nextCoordinatesToVisit = new Queue<OffsetInfo>();
@@ -396,10 +417,6 @@ namespace MowingMachine.Models
                     .FirstOrDefault(f => f.Offset.CompareTo(new Offset(offset.X, offset.Y)))?.Type;
 
                 value ??= FieldType.Water;
-
-                if ((int) value == -1)
-                {
-                }
                 
                 return (int) value != -1 && (FieldType) value is not FieldType.Water;
             }

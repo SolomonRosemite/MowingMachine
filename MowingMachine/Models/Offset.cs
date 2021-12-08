@@ -18,8 +18,8 @@ namespace MowingMachine.Models
             Y = y;
         }
 
-        public int X { get; }
-        public int Y { get; }
+        public int X { get; private set;  }
+        public int Y { get; private set; }
 
         public Offset Add(Offset offset) => new(X + offset.X, Y + offset.Y);
         public Offset Subtract(Offset offset) => new(X - offset.X, Y - offset.Y);
@@ -28,5 +28,11 @@ namespace MowingMachine.Models
         public bool CompareTo(Offset offset) => X == offset.X && Y == offset.Y;
         
         public override string ToString() => $"{X}-{Y}";
+
+        public void UpdateOffset(Offset offset)
+        {
+            X = offset.X;
+            Y = offset.Y;
+        }
     }
 }
