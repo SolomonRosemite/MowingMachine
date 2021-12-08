@@ -46,7 +46,7 @@
                                     <ColumnDefinition Width="1*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <ProgressBar Grid.Column="1" Orientation="Vertical" Value="40" Height="200" />
+                                <ProgressBar Name="ChargeProgressBar" Grid.Column="1" Orientation="Vertical" Value="40" Height="200" />
                             </Grid>
 
                             <Label HorizontalAlignment="Center" Content="Charge: 40%"/>
@@ -61,7 +61,7 @@
                                     <ColumnDefinition Width="1*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <ProgressBar Grid.Column="1" Orientation="Vertical" Value="65" Height="200" />
+                                <ProgressBar Name="MowedGrassCountProgressBar" Grid.Column="1" Orientation="Vertical" Value="65" Height="200" />
                             </Grid>
 
                             <Label HorizontalAlignment="Center" Content="Mowed lawn: 65%"/>

@@ -32,12 +32,14 @@ namespace MowingMachine.Models
 
         private bool _finalRunToChargingStation;
         private Offset _tempOffset;
+        private readonly double _maxChange;
         private double _charge;
 
-        public MyMowingMachine(MapManager mapManager, double charge)
+        public MyMowingMachine(MapManager mapManager, double maxChange)
         {
             _mapManager = mapManager;
-            _charge = charge;
+            _maxChange = maxChange;
+            _charge = maxChange;
             
             // Add initial fields
             _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0), FieldType.ChargingStation);
@@ -62,7 +64,6 @@ namespace MowingMachine.Models
             return new Field(fieldType, offset, neighbors);
         }
 
-        private int test2 = 40;
         public bool PerformMove()
         {
             if (!_mapManager.Verify())
@@ -95,7 +96,8 @@ namespace MowingMachine.Models
             }
 
             var stepsToChargingStation = CalculateStepsToGoal(calculatedSteps.Last().MoveDirection, new Offset(0, 0));
-            
+
+            Console.WriteLine($"Charge: {_charge}");
             var needsToRefuelFirst = NeedsToRefuel(calculatedSteps, stepsToChargingStation);
             if (needsToRefuelFirst)
             {
@@ -128,7 +130,7 @@ namespace MowingMachine.Models
             _tempOffset = _tempOffset.Add(new Offset(x, y));
 
             _currentFieldType = _mapManager.MoveMowingMachine(step,
-                _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType);
+                _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType, _charge);
 
             if (!_mowingSteps.Any())
             {
@@ -186,7 +188,7 @@ namespace MowingMachine.Models
         
         private Field Move(MowingStep step, Offset newOffset, FieldType? updatePrevFieldType = null)
         {
-            _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType ?? _currentFieldType);
+            _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType ?? _currentFieldType, _charge);
 
             var type = updatePrevFieldType ?? _currentFieldType;
             
@@ -256,8 +258,13 @@ namespace MowingMachine.Models
                                          .Select(s => s.TotalEnergyExpense).Sum() +
                                      stepsToChangingStation
                                          .Select(s => s.TotalEnergyExpense).Sum();
-            return test2-- == 1;
-            // return _charge >= totalRequestEnergy;
+
+            bool hasEnoughFuel = _charge >= totalRequestEnergy;
+
+            if (hasEnoughFuel)
+                _charge -= totalRequestEnergy;
+            
+            return !hasEnoughFuel;
         }
 
         private void PerformStep(List<MowingStep> steps)
@@ -367,6 +374,8 @@ namespace MowingMachine.Models
 
                 foreach (var step in stepsToChargingStation)
                     _pathFromChargingStationToRecentPosition.Enqueue(step);
+
+                _charge = _maxChange;
                 return;
             }
             

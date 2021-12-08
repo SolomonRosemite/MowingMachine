@@ -6,23 +6,27 @@ namespace MowingMachine.Models
     public class MapManager
     {
         public event EventHandler<OnUpdateMapEventArgs> OnUpdateMap;
-
+        
         public class OnUpdateMapEventArgs : EventArgs
         {
             public int[][] Map;
+            public double Charge;
         }
         
-        public MapManager(int[][] map)
+        public MapManager(int[][] map, double fuel)
         {
             this.Map = map;
+            _currentFuel = fuel;
         }
 
-        private int[][] Map { get; }
         private MowingStep _currentlyWorkingMowingStep;
+        private double _currentFuel;
+        private int[][] Map { get; }
         
-        public FieldType MoveMowingMachine(MowingStep step, FieldType previousField)
+        public FieldType MoveMowingMachine(MowingStep step, FieldType previousField, double fuel)
         {
             _currentlyWorkingMowingStep = step;
+            _currentFuel = fuel;
             
             var (mowingMachineX, mowingMachineY) = GetMowingMachineCoordinate();
             var (x, y) = Map.GetTranslatedCoordinate(mowingMachineX, mowingMachineY, step.MoveDirection);
@@ -37,7 +41,7 @@ namespace MowingMachine.Models
 
         private void Update()
         {
-            OnUpdateMap?.Invoke(this, new OnUpdateMapEventArgs { Map = (int[][]) this.Map.Clone() });
+            OnUpdateMap?.Invoke(this, new OnUpdateMapEventArgs { Map = (int[][]) this.Map.Clone(), Charge = _currentFuel});
         }
 
         public bool Verify()

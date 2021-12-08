@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Timers;
 using System.Windows;
+using MowingMachine.Models;
 
 namespace MowingMachine
 {
@@ -12,6 +13,7 @@ namespace MowingMachine
         private SampleMapPage _mapPage;
         private Timer _timer;
         private bool _running;
+        private int[][] _initialMapSample;
         
         public MainWindow()
         {
@@ -38,10 +40,27 @@ namespace MowingMachine
                 new [] { 1, 1, 3, 1, 1, 1, 0, 0, 0, 0 },
             };
 
+            _initialMapSample = (int[][]) mapSample.Clone();
             mapSample = mapSample.Reverse().ToArray();
 
             _mapPage = new SampleMapPage(mapSample, 1200);
             SampleMapFrame.Content = _mapPage;
+            
+            // _mapPage.OnUpdateMap += Ok;
+        }
+
+        private void Ok(object sender, MapManager.OnUpdateMapEventArgs e)
+        {
+            var totalGrass = GetCount(_initialMapSample, FieldType.Grass);
+            var totalMowedGrass = GetCount(e.Map, FieldType.MowedLawn);
+            
+            // MowedGrassCountProgressBar.Value = totalMowedGrass / totalGrass;
+            // ChargeProgressBar.Value = e.Charge;
+        }
+
+        private double GetCount(int[][] map, FieldType type)
+        {
+            return map.Sum(t1 => map.Where((t, y) => (FieldType) t1[y] == type).Count());
         }
 
         private void StartSimulationClick(object sender, RoutedEventArgs e)
