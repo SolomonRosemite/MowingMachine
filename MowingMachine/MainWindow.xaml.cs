@@ -12,11 +12,12 @@ namespace MowingMachine
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly double _mowingMachineCharge = 1200;
+        private double _mowingMachineCharge;
         private int[][] _initialMapSample;
         private SampleMapPage _mapPage;
         private Timer _timer;
         private bool _running;
+        private int _simulationSpeed;
         
         public MainWindow()
         {
@@ -25,9 +26,25 @@ namespace MowingMachine
             InitializeApp();
         }
 
+        // Todo: Improve UI so that when the values change we make sure to call the Initialize method again. Else we dont actually use the user input.
+        // It gets applied once the sim has ended and then the user clicks "start sim again" which will cause the Initialize method to be called again.
         private void InitializeApp()
         {
             _timer?.Stop();
+
+            Console.WriteLine(SimulationSpeedTextBox.Text);
+            Console.WriteLine(BatteryCapacityTextBox.Text);
+            
+            if (int.TryParse(SimulationSpeedTextBox.Text, out var simulationSpeed) && double.TryParse(BatteryCapacityTextBox.Text, out var batteryCapacity))
+            {
+                _simulationSpeed = simulationSpeed;
+                _mowingMachineCharge = batteryCapacity * 100;
+            }
+            else
+            {
+                // Todo: User typed invalid input. Handle here...
+                return;
+            }
             
             int[][] mapSample =
             {
@@ -48,6 +65,9 @@ namespace MowingMachine
 
             _mapPage = new SampleMapPage(mapSample, _mowingMachineCharge, this);
             SampleMapFrame.Content = _mapPage;
+            
+            SetChargeValue(0);
+            SetMowedGrassValue(0);
         }
 
         public void UpdateValues(MapManager.OnUpdateMapEventArgs e)
@@ -58,13 +78,23 @@ namespace MowingMachine
             Application.Current.Dispatcher.Invoke(delegate
             {
                 // Update charge
-                ChargeProgressBar.Value = Math.Round(e.Charge / _mowingMachineCharge * 100, 2);
-                ChargeLabel.Content = $"Charge: {ChargeProgressBar.Value}%";
+                SetChargeValue(e.Charge);
                 
                 var newValue = totalMowedGrass / totalGrass * 100;
-                MowedGrassCountProgressBar.Value = Math.Round(Math.Max(newValue, MowedGrassCountProgressBar.Value), 2);
-                MowedGrassCountLabel.Content = $"Mowed lawn: {MowedGrassCountProgressBar.Value}%";
+                SetMowedGrassValue(Math.Max(newValue, MowedGrassCountProgressBar.Value));
             });
+        }
+
+        private void SetMowedGrassValue(double value)
+        {
+            MowedGrassCountProgressBar.Value = Math.Round(value, 2);
+            MowedGrassCountLabel.Content = $"Mowed lawn: {MowedGrassCountProgressBar.Value}%";
+        }
+
+        private void SetChargeValue(double value)
+        {
+            ChargeProgressBar.Value = Math.Round(value / _mowingMachineCharge * 100, 2);
+            ChargeLabel.Content = $"Charge: {ChargeProgressBar.Value}%";
         }
 
         private double GetCount(IReadOnlyList<int[]> map, FieldType type)
@@ -77,7 +107,6 @@ namespace MowingMachine
                         count++;
             
             return count;
-            // return map.Sum(t1 => map.Where((t, y) => (FieldType) t1[y] == type).Count());
         }
 
         private void StartSimulationClick(object sender, RoutedEventArgs e)
@@ -92,11 +121,11 @@ namespace MowingMachine
                 InitializeApp();
         }
 
-        private void UpdateUi() => StartButton.Content = _running ? "Stop simulation" : "Start again simulation";
+        private void UpdateUi() => StartButton.Content = _running ? "Stop simulation" : "Start simulation again";
 
         private void RunSimulation()
         {
-            _timer = new Timer(10);
+            _timer = new Timer(_simulationSpeed);
             _timer.AutoReset = true;
             _timer.Elapsed += TimerOnElapsed;
             _timer.Start();

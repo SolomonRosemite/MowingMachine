@@ -175,6 +175,7 @@ namespace MowingMachine.Models
             return steps;
         }
 
+        // Todo: Take into account when mowing is mowing grass. It's also consuming energy.
         private static MowingStep CalculateStepExpense(MoveDirection direction, MoveDirection currentFacingDirection, FieldType currentFieldType)
         {
             var turns = new Queue<MoveDirection>();
