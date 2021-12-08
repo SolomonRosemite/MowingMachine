@@ -32,9 +32,6 @@ namespace MowingMachine
         {
             _timer?.Stop();
 
-            Console.WriteLine(SimulationSpeedTextBox.Text);
-            Console.WriteLine(BatteryCapacityTextBox.Text);
-            
             if (int.TryParse(SimulationSpeedTextBox.Text, out var simulationSpeed) && double.TryParse(BatteryCapacityTextBox.Text, out var batteryCapacity))
             {
                 _simulationSpeed = simulationSpeed;
@@ -125,6 +122,9 @@ namespace MowingMachine
 
         private void RunSimulation()
         {
+            Console.WriteLine($"Running with {_mowingMachineCharge} charge.");
+            Console.WriteLine($"Running with {_simulationSpeed} ms per step. (Speed)");
+            
             _timer = new Timer(_simulationSpeed);
             _timer.AutoReset = true;
             _timer.Elapsed += TimerOnElapsed;
