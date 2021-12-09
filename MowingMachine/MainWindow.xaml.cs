@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
 using MowingMachine.Models;
+using Timer = System.Timers.Timer;
 
 namespace MowingMachine
 {
@@ -15,9 +18,9 @@ namespace MowingMachine
         private double _mowingMachineCharge;
         private int[][] _initialMapSample;
         private SampleMapPage _mapPage;
-        private Timer _timer;
         private bool _running;
         private int _simulationSpeed;
+        // private bool _runIsComplete;
         
         public MainWindow()
         {
@@ -30,8 +33,6 @@ namespace MowingMachine
         // It gets applied once the sim has ended and then the user clicks "start sim again" which will cause the Initialize method to be called again.
         private void InitializeApp()
         {
-            _timer?.Stop();
-
             if (int.TryParse(SimulationSpeedTextBox.Text, out var simulationSpeed) && double.TryParse(BatteryCapacityTextBox.Text, out var batteryCapacity))
             {
                 _simulationSpeed = simulationSpeed;
@@ -106,36 +107,43 @@ namespace MowingMachine
             return count;
         }
 
-        private void StartSimulationClick(object sender, RoutedEventArgs e)
+        private async void StartSimulationClick(object sender, RoutedEventArgs e)
         {
             _running = !_running;
             
             UpdateUi();
             
             if (_running)
-                RunSimulation();
+                await RunSimulation();
             else
                 InitializeApp();
         }
 
         private void UpdateUi() => StartButton.Content = _running ? "Stop simulation" : "Start simulation again";
 
-        private void RunSimulation()
+        private async Task RunSimulation()
         {
             Console.WriteLine($"Running with {_mowingMachineCharge} charge.");
             Console.WriteLine($"Running with {_simulationSpeed} ms per step. (Speed)");
-            
-            _timer = new Timer(_simulationSpeed);
-            _timer.AutoReset = true;
-            _timer.Elapsed += TimerOnElapsed;
-            _timer.Start();
+
+            while (true)
+            {
+                if (!_running)
+                {
+                    UpdateUi();
+                    break;
+                }
+                
+                await Task.Delay(_simulationSpeed);
+                TimerOnElapsed();
+            }
         }
 
-        private void TimerOnElapsed(object sender, ElapsedEventArgs e)
+        private void TimerOnElapsed()
         {
             var complete = _mapPage.ExecuteStep();
-            if (complete)
-                _timer.Stop();
+            _running = !complete;
+            // _runIsComplete = complete;
         }
     }
 }

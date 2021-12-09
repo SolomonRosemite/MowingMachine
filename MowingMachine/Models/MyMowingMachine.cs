@@ -175,7 +175,6 @@ namespace MowingMachine.Models
             return steps;
         }
 
-        // Todo: Take into account when mowing is mowing grass. It's also consuming energy.
         private static MowingStep CalculateStepExpense(MoveDirection direction, MoveDirection currentFacingDirection, FieldType currentFieldType)
         {
             var turns = new Queue<MoveDirection>();
@@ -185,9 +184,11 @@ namespace MowingMachine.Models
 
             return new MowingStep(turns, direction, currentFieldType);
         }
-        
+
         private Field Move(MowingStep step, Offset newOffset, FieldType? updatePrevFieldType = null)
         {
+            _charge -= step.TotalEnergyExpense;
+
             _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType ?? _currentFieldType, _charge);
 
             var type = updatePrevFieldType ?? _currentFieldType;
@@ -248,7 +249,6 @@ namespace MowingMachine.Models
 
         private void Complete()
         {
-            // Todo: Maybe double check if all the grass was mowed.
             Console.WriteLine("Mowing complete!");
         }
 
@@ -260,9 +260,6 @@ namespace MowingMachine.Models
                                          .Select(s => s.TotalEnergyExpense).Sum();
 
             bool hasEnoughFuel = _charge >= totalRequestEnergy;
-
-            if (hasEnoughFuel)
-                _charge -= totalRequestEnergy;
             
             return !hasEnoughFuel;
         }

@@ -10,7 +10,13 @@ namespace MowingMachine.Models
             Turns = turns;
             MoveDirection = moveDirection;
             FieldType = fieldType;
-            TotalEnergyExpense = Constants.TranslateMoveToExpense(fieldType) + turns.Count * Constants.TurnExpense;
+            var expense = Constants.TranslateMoveToExpense(fieldType) + turns.Count * Constants.TurnExpense;
+
+            // If the field type is grass or cobble the mowing machine will mow it. Thus use more energy.
+            if (fieldType is FieldType.Grass or FieldType.CobbleStone)
+                expense += 5;
+            
+            TotalEnergyExpense = expense;
         }
 
         public Queue<MoveDirection> Turns { get; }
