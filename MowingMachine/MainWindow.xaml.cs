@@ -68,33 +68,6 @@ namespace MowingMachine
             SetMowedGrassValue(0);
         }
 
-        public void UpdateValues(MapManager.OnUpdateMapEventArgs e)
-        {
-            var totalGrass = GetCount(_initialMapSample, FieldType.Grass) - 1;
-            var totalMowedGrass = GetCount((int[][]) e.Map.Clone(), FieldType.MowedLawn);
-            
-            Application.Current.Dispatcher.Invoke(delegate
-            {
-                // Update charge
-                SetChargeValue(e.Charge);
-                
-                var newValue = totalMowedGrass / totalGrass * 100;
-                SetMowedGrassValue(Math.Max(newValue, MowedGrassCountProgressBar.Value));
-            });
-        }
-
-        private void SetMowedGrassValue(double value)
-        {
-            MowedGrassCountProgressBar.Value = Math.Round(value, 2);
-            MowedGrassCountLabel.Content = $"Mowed lawn: {MowedGrassCountProgressBar.Value}%";
-        }
-
-        private void SetChargeValue(double value)
-        {
-            ChargeProgressBar.Value = Math.Round(value / _mowingMachineCharge * 100, 2);
-            ChargeLabel.Content = $"Charge: {ChargeProgressBar.Value}%";
-        }
-
         private double GetCount(IReadOnlyList<int[]> map, FieldType type)
         {
             double count = 0;
@@ -109,7 +82,10 @@ namespace MowingMachine
 
         private async void StartSimulationClick(object sender, RoutedEventArgs e)
         {
-            _running = !_running;
+            if (_running)
+            {
+                
+            }
             
             UpdateUi();
             
@@ -135,15 +111,42 @@ namespace MowingMachine
                 }
                 
                 await Task.Delay(_simulationSpeed);
-                TimerOnElapsed();
+                ExecuteNextStep();
             }
         }
 
-        private void TimerOnElapsed()
+        private void ExecuteNextStep()
         {
             var complete = _mapPage.ExecuteStep();
             _running = !complete;
             // _runIsComplete = complete;
+        }
+        
+        public void UpdateValues(MapManager.OnUpdateMapEventArgs e)
+        {
+            var totalGrass = GetCount(_initialMapSample, FieldType.Grass) - 1;
+            var totalMowedGrass = GetCount((int[][]) e.Map.Clone(), FieldType.MowedLawn);
+            
+            Application.Current.Dispatcher.Invoke(delegate
+            {
+                // Update charge
+                SetChargeValue(e.Charge);
+                
+                var newValue = totalMowedGrass / totalGrass * 100;
+                SetMowedGrassValue(Math.Max(newValue, MowedGrassCountProgressBar.Value));
+            });
+        }
+
+        private void SetMowedGrassValue(double value)
+        {
+            MowedGrassCountProgressBar.Value = Math.Round(value, 2);
+            MowedGrassCountLabel.Content = $"Mowed lawn: {MowedGrassCountProgressBar.Value}%";
+        }
+
+        private void SetChargeValue(double value)
+        {
+            ChargeProgressBar.Value = Math.Round(value / _mowingMachineCharge * 100, 2);
+            ChargeLabel.Content = $"Charge: {ChargeProgressBar.Value}%";
         }
     }
 }
