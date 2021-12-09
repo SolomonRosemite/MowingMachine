@@ -4,8 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="MainWindow" Height="700" Width="1200">
-        <!-- Title="MainWindow" Height="450" Width="800"> -->
+        Title="MainWindow" Height="550" Width="1000">
     <Grid>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -18,7 +17,7 @@
 
             <Grid Grid.Column="1">
                 <StackPanel Height="100" Margin="10,10,10,0" VerticalAlignment="Top">
-                    <Label Content="MowingMachine stats" HorizontalAlignment="Center" />
+                    <Label Content="MowingMachine stats" FontSize="14" HorizontalAlignment="Center" />
 
                     <DockPanel Margin="0,10,0,0">
                         <Label Content="Battery Capacity kWh: "/>
@@ -53,7 +52,7 @@
                                             <ColumnDefinition Width="1*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <ProgressBar Name="ChargeProgressBar" Grid.Column="1" Orientation="Vertical" Value="0" Height="200" />
+                                        <ProgressBar Name="ChargeProgressBar" Grid.Column="1" Orientation="Vertical" Value="0" Height="300" />
                                     </Grid>
 
                                     <Label Name="ChargeLabel" HorizontalAlignment="Center" Content="Charge: 0%"/>
@@ -68,25 +67,27 @@
                                             <ColumnDefinition Width="1*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <ProgressBar Name="MowedGrassCountProgressBar" Grid.Column="1" Orientation="Vertical" Value="0" Height="200" />
+                                        <ProgressBar Name="MowedGrassCountProgressBar" Grid.Column="1" Orientation="Vertical" Value="0" Height="300" />
                                     </Grid>
                                     <Label Name="MowedGrassCountLabel" HorizontalAlignment="Center" Content="Mowed lawn: 0%" Width="134" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
                             <Button Name="StartButton" Height="30" Content="Start Simulation" Click="StartSimulationClick" />
-
                         </StackPanel>
                     </Grid>
 
                     <Grid Column="1">
                         <StackPanel Margin="0,0,0,5" VerticalAlignment="Bottom">
+                            <Label Content="Movements" FontSize="14" />
+                            <TextBox IsReadOnly="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Name="MovementsTextBox" Margin="0,10,10,10" Height="260" />
+
                             <DockPanel>
                                 <Button Margin="5" FontSize="12" Height="30" Content="Generate new map" Click="StartSimulationClick" />
                             </DockPanel>
 
                             <DockPanel>
-                                <Button Margin="5" FontSize="12" Name="ResetSettingsButton" Height="30" Content="Reset settings" Click="StartSimulationClick" />
                                 <Button Margin="5" FontSize="12" Name="ApplySettingsButton" Height="30" Content="Apply settings" Click="StartSimulationClick" />
+                                <Button Margin="5" FontSize="12" Name="ResetSettingsButton" Height="30" Content="Reset settings" Click="StartSimulationClick" />
                             </DockPanel>
                         </StackPanel>
                     </Grid>
