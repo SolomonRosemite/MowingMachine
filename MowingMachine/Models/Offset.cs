@@ -8,6 +8,11 @@ namespace MowingMachine.Models
         {
             X = x;
             Y = y;
+
+            if (X == -6 && y == 3)
+            {
+                
+            }
         }
         
         public Offset(MoveDirection direction)
@@ -16,6 +21,11 @@ namespace MowingMachine.Models
             
             X = x;
             Y = y;
+            
+            if (X == -6 && y == 3)
+            {
+                
+            }
         }
 
         public int X { get; private set;  }

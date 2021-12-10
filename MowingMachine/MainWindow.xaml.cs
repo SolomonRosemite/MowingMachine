@@ -33,7 +33,9 @@ namespace MowingMachine
         {
             InitializeComponent();
 
-            ApplySettings(10, 1.2, false);
+            // Todo: Revert later again.
+            ApplySettings(5, 120, false);
+            // ApplySettings(10, 1.2, false);
         }
 
         private void InitializeApp()

@@ -66,6 +66,11 @@ namespace MowingMachine.Models
 
         public bool PerformMove()
         {
+            if (_mowingSteps.Any(s => s.FieldType is FieldType.Water) || _discoveredFields.Any(f => f.Type is FieldType.Water))
+            {
+                
+            }
+            
             if (!_mapManager.Verify())
             {
                 return false;
@@ -86,9 +91,13 @@ namespace MowingMachine.Models
                 return false;
             }
 
-
             var calculatedSteps = CalculateNextMove();
 
+            if (calculatedSteps.Any(s =>  s.FieldType == FieldType.Water))
+            {
+                
+            }
+            
             if (!calculatedSteps.Any())
             {
                 Complete();
@@ -123,6 +132,8 @@ namespace MowingMachine.Models
         private void PerformOngoingSteps()
         {
             _tempOffset ??= _currentField.Offset;
+            var currentOffset = _currentField.Offset;
+            var currentOffset2 = _tempOffset;
 
             var step = _mowingSteps.Dequeue();
             var (x, y) = step.MoveDirection.TranslateDirectionToOffset();
@@ -166,7 +177,7 @@ namespace MowingMachine.Models
 
                 var step = CalculateStepExpense(direction,
                     currentDirection,
-                    _discoveredFields.First(f => f.Offset.CompareTo(path[i])).Type);
+                    _discoveredFields.First(f => f.Offset.CompareTo(path[i])).Type, finalOffset);
 
                 currentDirection = direction;
                 steps.Add(step);
@@ -175,14 +186,15 @@ namespace MowingMachine.Models
             return steps;
         }
 
-        private static MowingStep CalculateStepExpense(MoveDirection direction, MoveDirection currentFacingDirection, FieldType currentFieldType)
+        private static MowingStep CalculateStepExpense(MoveDirection direction, MoveDirection currentFacingDirection,
+            FieldType currentFieldType, Offset final)
         {
             var turns = new Queue<MoveDirection>();
             
             if (currentFacingDirection != direction)
                 turns = CalculateTurn(currentFacingDirection, direction, turns);
 
-            return new MowingStep(turns, direction, currentFieldType);
+            return new MowingStep(turns, direction, currentFieldType, final);
         }
 
         private Field Move(MowingStep step, Offset newOffset, FieldType? updatePrevFieldType = null)
@@ -297,7 +309,7 @@ namespace MowingMachine.Models
         private List<MowingStep> CalculateNextMove()
         {
             var successful = GetNextNeighborField(out var values);
-            var (_, direction) = values;
+            var (off, direction) = values;
             
             if (!successful)
             {
@@ -311,7 +323,8 @@ namespace MowingMachine.Models
 
                     if (!neighbors.Any())
                     {
-                        var step = CalculateStepExpense(prevFieldStep.MoveDirection.InvertDirection(), currentDirection, currentlyStandFieldType);
+                        var step = CalculateStepExpense(prevFieldStep.MoveDirection.InvertDirection(), currentDirection,
+                            currentlyStandFieldType, offset);
                         currentlyStandFieldType = prevFieldStep.FieldType;
                         steps.Add(step);
 
@@ -325,7 +338,7 @@ namespace MowingMachine.Models
                         
                         var finalDirection = calculatedOffset.TranslateOffsetToDirection();
                         
-                        var stepFinal = CalculateStepExpense(finalDirection, currentDirection, prevFieldStep.FieldType);
+                        var stepFinal = CalculateStepExpense(finalDirection, currentDirection, prevFieldStep.FieldType, calculatedOffset);
                         steps.Add(stepFinal);
                         return steps;
                     }
@@ -334,7 +347,7 @@ namespace MowingMachine.Models
                 return new List<MowingStep>();
             }
             
-            var nextStep = CalculateStepExpense(direction, _currentFacingDirection, _currentFieldType);
+            var nextStep = CalculateStepExpense(direction, _currentFacingDirection, _currentFieldType, off.Offset);
 
             return new List<MowingStep> { nextStep };
 
@@ -388,7 +401,7 @@ namespace MowingMachine.Models
             _currentField = Move(nextStep, newOffset, _currentFieldType);
         }
         
-        // Breadth first search
+        // Breadth first search (bfs)
         private List<Offset> CalculatePathToGoal(Offset start, Offset goal)
         {
             var visitedCoordinates = new Dictionary<string, Offset>();
