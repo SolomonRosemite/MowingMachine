@@ -5,9 +5,7 @@ namespace MowingMachine.Models
 {
     public class MowingStep
     {
-        // Todo: Revert
         public MowingStep(Queue<MoveDirection> turns, MoveDirection moveDirection, FieldType fieldType)
-        // public MowingStep(Queue<MoveDirection> turns, MoveDirection moveDirection, FieldType fieldType)
         {
             Turns = turns;
             MoveDirection = moveDirection;

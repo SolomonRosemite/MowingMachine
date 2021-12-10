@@ -302,30 +302,25 @@ namespace MowingMachine.Models
         private List<MowingStep> CalculateNextMove()
         {
             var successful = GetNextNeighborField(out var values);
-            var (off, direction) = values;
+            var (_, direction) = values;
             
             if (!successful)
             {
-                var allUnvisitedFields = _discoveredFields.SelectMany(f => f.NeighborFields)
-                    .Distinct(new FieldComparer())
-                    .Where(f => !f.IsVisited && f.CanBeWalkedOn() && f.Type != FieldType.ChargingStation)
+                var allUnvisitedFields = _discoveredFields
+                    .Where(f => f.NeighborFields.Any(nf =>
+                        !nf.IsVisited && nf.CanBeWalkedOn() && nf.Type != FieldType.ChargingStation))
                     .ToList();
-
+                
                 var availablePaths = allUnvisitedFields.Select(unvisitedField =>
                     CalculatePathToGoal(_currentField.Offset, unvisitedField.Offset))
-                    // CalculatePathToGoal(_currentField.Offset, unvisitedField.Offset))
                     .ToList();
 
                 var path = availablePaths.OrderBy(p => p.Count).FirstOrDefault();
+                // var path = availablePaths.OrderBy(p => p.Count).FirstOrDefault();
 
-                if (path is not null)
-                {
-                    
-                }
-                
-                // var availablePaths = new List<List<MowingStep>>();
-
-                return new List<MowingStep>();
+                return path is not null
+                    ? CalculateStepsToGoal(_currentFacingDirection, path.Last()).ToList()
+                    : new List<MowingStep>();
             }
             
             var nextStep = CalculateStepExpense(direction, _currentFacingDirection, _currentFieldType);

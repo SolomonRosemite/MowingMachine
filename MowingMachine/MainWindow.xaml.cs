@@ -33,9 +33,7 @@ namespace MowingMachine
         {
             InitializeComponent();
 
-            // Todo: Revert later again.
-            ApplySettings(5, 120, false);
-            // ApplySettings(10, 1.2, false);
+            ApplySettings(10, 1.2, false);
         }
 
         private void InitializeApp()
@@ -204,10 +202,10 @@ namespace MowingMachine
             
             var chanceOfFieldAsList = new Dictionary<FieldType, int>
             {
-                { FieldType.Grass, 60 },
-                { FieldType.Sand, 15 },
-                { FieldType.CobbleStone, 15 },
-                { FieldType.Water, 10 },
+                { FieldType.Grass, 50 },
+                { FieldType.Sand, 10 },
+                { FieldType.CobbleStone, 10 },
+                { FieldType.Water, 30 },
             }.ToList();
             
             for (int x = 0; x < map.Length; x++)
