@@ -32,14 +32,7 @@ namespace MowingMachine
         
         public bool ExecuteStep()
         {
-            var isComplete = _mowingMachine.PerformMove();
-
-            if (isComplete)
-            {
-                // Todo: Handle...
-            }
-
-            return isComplete;
+            return _mowingMachine.PerformMove();
         }
         
         private void CreateDefinitions(IReadOnlyList<ColumnDefinition> columnDefinitions, IReadOnlyList<RowDefinition> rowDefinitions)

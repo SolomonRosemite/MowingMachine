@@ -22,5 +22,27 @@ namespace MowingMachine.Common
         {
             return _ExpensesDictionary.First(e => e.Key == fieldType).Value;
         }
+
+        public static int[][] DefaultMapSample
+        {
+            get
+            {
+                int[][] sample =
+                {
+                    new[] {1, 1, 1, 1, 1, 1, 1, 6, 6, 6},
+                    new[] {1, 1, 6, 6, 6, 1, 1, 1, 1, 6},
+                    new[] {1, 1, 6, 6, 6, 6, 1, 1, 1, 6},
+                    new[] {1, 1, 6, 6, 6, 6, 1, 1, 1, 1},
+                    new[] {1, 1, 1, 1, 1, 3, 1, 1, 1, 1},
+                    new[] {1, 1, 1, 1, 1, 3, 1, 1, 1, 1},
+                    new[] {1, 1, 1, 1, 1, 3, 1, 1, 5, 1},
+                    new[] {1, 6, 3, 3, 3, 3, 1, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 1, 0, 6, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                };
+
+                return sample;
+            }
+        }
     }
 }

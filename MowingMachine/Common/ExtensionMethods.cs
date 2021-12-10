@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using MowingMachine.Models;
 
 namespace MowingMachine.Common
@@ -109,6 +110,11 @@ namespace MowingMachine.Common
                     list.Insert(newIndex, item);
                 }
             }
+        }
+        
+        public static int[][] DeepClone(this int[][] value)
+        {
+            return value.Select(a => a.ToArray()).ToArray();
         }
     }
 }

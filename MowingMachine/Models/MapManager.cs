@@ -11,19 +11,20 @@ namespace MowingMachine.Models
         {
             public int[][] Map;
             public double Charge;
+            public string Movement;
         }
         
         public MapManager(int[][] map, double fuel, MainWindow mainWindow)
         {
-            this.Map = map;
+            this._map = map;
             _currentFuel = fuel;
             _mainWindow = mainWindow;
         }
 
         private MowingStep _currentlyWorkingMowingStep;
         private readonly MainWindow _mainWindow;
+        private readonly int[][] _map;
         private double _currentFuel;
-        private int[][] Map { get; }
         
         public FieldType MoveMowingMachine(MowingStep step, FieldType previousField, double fuel)
         {
@@ -31,19 +32,19 @@ namespace MowingMachine.Models
             _currentFuel = fuel;
             
             var (mowingMachineX, mowingMachineY) = GetMowingMachineCoordinate();
-            var (x, y) = Map.GetTranslatedCoordinate(mowingMachineX, mowingMachineY, step.MoveDirection);
+            var (x, y) = _map.GetTranslatedCoordinate(mowingMachineX, mowingMachineY, step.MoveDirection);
 
-            var nextPreviousField = (FieldType) Map[x][y];
+            var nextPreviousField = (FieldType) _map[x][y];
             
-            Map[mowingMachineX][mowingMachineY] = (int) previousField;
-            Map[x][y] = (int) FieldType.MowingMachine;
+            _map[mowingMachineX][mowingMachineY] = (int) previousField;
+            _map[x][y] = (int) FieldType.MowingMachine;
 
             return nextPreviousField;
         }
 
-        private void Update()
+        private void Update(string movement)
         {
-            var args = new OnUpdateMapEventArgs {Map = (int[][]) this.Map.Clone(), Charge = _currentFuel};
+            var args = new OnUpdateMapEventArgs {Map = (int[][]) this._map.Clone(), Charge = _currentFuel, Movement = movement};
             _mainWindow.UpdateValues(args);
             OnUpdateMap?.Invoke(this, args);
         }
@@ -56,12 +57,11 @@ namespace MowingMachine.Models
             if (_currentlyWorkingMowingStep.Turns.Count != 0)
             {
                 var moveDirection = _currentlyWorkingMowingStep.Turns.Dequeue();
-                Console.WriteLine($"Turned mowing machine in direction: {moveDirection}.");
+                Update($"Turned mowing machine in direction: {moveDirection}.");
             }
             else
             {
-                Console.WriteLine("Mowing machine moving forward.");
-                Update();
+                Update("Mowing machine moving forward.");
                 _currentlyWorkingMowingStep = null;
             }
 
@@ -90,7 +90,7 @@ namespace MowingMachine.Models
 
                 for (int y = yCoordinate - 1; y < yCoordinate + 2; y++)
                 {
-                    map[mapX][mapY] = Map.GetField(x, y);
+                    map[mapX][mapY] = _map.GetField(x, y);
                     mapY++;
                 }
 
@@ -101,11 +101,11 @@ namespace MowingMachine.Models
         
         private (int, int) GetMowingMachineCoordinate()
         {
-            for (int x = 0; x < Map.Length; x++)
+            for (int x = 0; x < _map.Length; x++)
             {
-                for (int y = 0; y < Map.Length; y++)
+                for (int y = 0; y < _map.Length; y++)
                 {
-                    FieldType type = (FieldType)Map[x][y];
+                    FieldType type = (FieldType)_map[x][y];
 
                     if (type == FieldType.MowingMachine)
                         return (x, y);

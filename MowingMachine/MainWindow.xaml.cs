@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using System.Windows;
+using MowingMachine.Common;
 using MowingMachine.Models;
-using Timer = System.Timers.Timer;
 
 namespace MowingMachine
 {
@@ -15,55 +13,43 @@ namespace MowingMachine
     /// </summary>
     public partial class MainWindow : Window
     {
+        // Used to show the mowing moves
+        private string _movements = "";
+        private int _movementCount;
+        
+        // map sample and mowing machine settings 
         private double _mowingMachineCharge;
-        private int[][] _initialMapSample;
+        private int[][] _newlyGeneratedMapSample;
+        private int[][] _currentMapSample;
         private SampleMapPage _mapPage;
-        private bool _running;
         private int _simulationSpeed;
-        // private bool _runIsComplete;
+
+        // Used to control the UI state
+        private bool _clearFirst;
+        private bool _interrupted;
+        private bool _running;
         
         public MainWindow()
         {
             InitializeComponent();
 
+            ApplySettings(10, 1.2, false);
             InitializeApp();
         }
 
-        // Todo: Improve UI so that when the values change we make sure to call the Initialize method again. Else we dont actually use the user input.
-        // It gets applied once the sim has ended and then the user clicks "start sim again" which will cause the Initialize method to be called again.
         private void InitializeApp()
         {
-            if (int.TryParse(SimulationSpeedTextBox.Text, out var simulationSpeed) && double.TryParse(BatteryCapacityTextBox.Text, out var batteryCapacity))
-            {
-                _simulationSpeed = simulationSpeed;
-                _mowingMachineCharge = batteryCapacity * 100;
-            }
-            else
-            {
-                // Todo: User typed invalid input. Handle here...
-                return;
-            }
-            
-            int[][] mapSample =
-            {
-                new [] { 1, 1, 1, 1, 1, 1, 1, 6, 6, 6 },
-                new [] { 1, 1, 6, 6, 6, 1, 1, 1, 1, 6 },
-                new [] { 1, 1, 6, 6, 6, 6, 1, 1, 1, 6 },
-                new [] { 1, 1, 6, 6, 6, 6, 1, 1, 1, 1 },
-                new [] { 1, 1, 1, 1, 1, 3, 1, 1, 1, 1 },
-                new [] { 1, 1, 1, 1, 1, 3, 1, 1, 1, 1 },
-                new [] { 1, 1, 1, 1, 1, 3, 1, 1, 5, 1 },
-                new [] { 1, 6, 3, 3, 3, 3, 1, 0, 0, 0 },
-                new [] { 1, 1, 3, 1, 1, 1, 1, 0, 6, 0 },
-                new [] { 1, 1, 3, 1, 1, 1, 0, 0, 0, 0 },
-            };
+            _currentMapSample = _newlyGeneratedMapSample ?? Constants.DefaultMapSample;
 
-            _initialMapSample = mapSample.Select(a => a.ToArray()).ToArray();;
+            var mapSample = _currentMapSample.DeepClone();
             mapSample = mapSample.Reverse().ToArray();
 
             _mapPage = new SampleMapPage(mapSample, _mowingMachineCharge, this);
             SampleMapFrame.Content = _mapPage;
-            
+
+            _running = false;
+            _movements = string.Empty; 
+            _movementCount = 0; 
             SetChargeValue(0);
             SetMowedGrassValue(0);
         }
@@ -82,30 +68,51 @@ namespace MowingMachine
 
         private async void StartSimulationClick(object sender, RoutedEventArgs e)
         {
-            if (_running)
+            if (_clearFirst)
             {
+                _interrupted = true;
+                _clearFirst = false;
+                UpdateUi();
                 
-            }
-            
-            UpdateUi();
-            
-            if (_running)
-                await RunSimulation();
-            else
                 InitializeApp();
+            } else if (_running)
+            {
+                _running = false;
+                
+                // If we are already running reset app.
+                InitializeApp();
+            }
+            else
+            {
+                _running = true;
+                await RunSimulation();
+            }
         }
 
-        private void UpdateUi() => StartButton.Content = _running ? "Stop simulation" : "Start simulation again";
+        private void UpdateUi() => StartButton.Content = _clearFirst ? "Clear map" : _running ? "Stop simulation" : "Start simulation again";
 
         private async Task RunSimulation()
         {
             Console.WriteLine($"Running with {_mowingMachineCharge} charge.");
             Console.WriteLine($"Running with {_simulationSpeed} ms per step. (Speed)");
 
+            UpdateUi();
+            
+            _interrupted = false;
+            _clearFirst = true;
             while (true)
             {
+                if (_interrupted && _running)
+                {
+                    _interrupted = false;
+                    _running = false;
+                    UpdateUi();
+                    break;
+                }
+                
                 if (!_running)
                 {
+                    AddMovement("Mowing complete!");
                     UpdateUi();
                     break;
                 }
@@ -119,24 +126,25 @@ namespace MowingMachine
         {
             var complete = _mapPage.ExecuteStep();
             _running = !complete;
-            // _runIsComplete = complete;
         }
         
         public void UpdateValues(MapManager.OnUpdateMapEventArgs e)
         {
-            var totalGrass = GetCount(_initialMapSample, FieldType.Grass) - 1;
+            var totalGrass = GetCount(_currentMapSample, FieldType.Grass) - 1;
             var totalMowedGrass = GetCount((int[][]) e.Map.Clone(), FieldType.MowedLawn);
-            
+
             Application.Current.Dispatcher.Invoke(delegate
             {
                 // Update charge
                 SetChargeValue(e.Charge);
-                
+
                 var newValue = totalMowedGrass / totalGrass * 100;
                 SetMowedGrassValue(Math.Max(newValue, MowedGrassCountProgressBar.Value));
+                
+                AddMovement(e.Movement);
             });
         }
-
+        
         private void SetMowedGrassValue(double value)
         {
             MowedGrassCountProgressBar.Value = Math.Round(value, 2);
@@ -147,6 +155,68 @@ namespace MowingMachine
         {
             ChargeProgressBar.Value = Math.Round(value / _mowingMachineCharge * 100, 2);
             ChargeLabel.Content = $"Charge: {ChargeProgressBar.Value}%";
+        }
+
+        private void ApplySettings()
+        {
+            if (int.TryParse(SimulationSpeedTextBox.Text, out var simulationSpeed) && double.TryParse(BatteryCapacityTextBox.Text, out var batteryCapacity))
+            {
+                ApplySettings(simulationSpeed, batteryCapacity);
+                return;
+            }
+         
+            ShowPopup("Invalid settings input", "The specified settings are not valid. Please try again.");
+        }
+
+        private void ApplySettings(int simulationSpeed, double batteryCapacity, bool showDialog = true)
+        {
+            SimulationSpeedTextBox.Text = simulationSpeed.ToString();
+            BatteryCapacityTextBox.Text = batteryCapacity.ToString();
+            
+            _simulationSpeed = simulationSpeed;
+            _mowingMachineCharge = batteryCapacity * 1000;
+
+            if (showDialog)
+                ShowPopup("Updated setting", "Updated settings successfully.\nSettings will be applied on the next simulation.");
+        }
+        
+        private void OnApplySettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings();
+
+        private void OnResetSettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings(10, 1.2);
+
+        private void OnGenerateNewMapClick(object sender, RoutedEventArgs e)
+        {
+            _newlyGeneratedMapSample = _currentMapSample.DeepClone();
+
+            GenerateNewMap();
+            InitializeApp();
+        }
+
+        private void GenerateNewMap()
+        {
+            int count = 5;
+            for (int x = 0; x < _currentMapSample.Length; x++)
+            {
+                for (int y = 0; y < _currentMapSample.Length; y++)
+                {
+                    if (count-- == 0)
+                        return;
+
+                    _newlyGeneratedMapSample[x][y] = 6;
+                }
+            }
+        }
+
+        private void AddMovement(string movement)
+        {
+            _movements += $"{++_movementCount}: {movement}\n";
+            MovementsTextBox.Text = _movements;
+            MovementsTextBox.ScrollToEnd();
+        }
+
+        private void ShowPopup(string title, string description)
+        {
+            new Popup(title, description).Show();
         }
     }
 }

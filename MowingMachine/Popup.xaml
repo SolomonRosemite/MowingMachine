@@ -1,0 +1,16 @@
+﻿<Window x:Class="MowingMachine.Popup"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MowingMachine"
+        mc:Ignorable="d"
+        Title="Popup" Height="250" Width="400">
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Label HorizontalAlignment="Center" Name="TitleLabel" FontSize="15" Content="Title" Margin="0,0,0,110" />
+        <TextBlock Name="Description" TextWrapping="Wrap" TextAlignment="Center" ScrollViewer.VerticalScrollBarVisibility="Auto" Text="Description" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="180"/>
+        <Button Height="20" Margin="0,0,0,0" VerticalAlignment="Bottom" Click="OnButtonCloseClick">
+            Close
+        </Button>
+    </Grid>
+</Window>
