@@ -34,7 +34,6 @@ namespace MowingMachine
             InitializeComponent();
 
             ApplySettings(10, 1.2, false);
-            InitializeApp();
         }
 
         private void InitializeApp()
@@ -178,6 +177,7 @@ namespace MowingMachine
 
             if (showDialog)
                 ShowPopup("Updated setting", "Updated settings successfully.\nSettings will be applied on the next simulation.");
+            InitializeApp();
         }
         
         private void OnApplySettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings();
