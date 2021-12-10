@@ -179,7 +179,7 @@ namespace MowingMachine
                 ShowPopup("Updated setting", "Updated settings successfully.\nSettings will be applied on the next simulation.");
             InitializeApp();
         }
-        
+
         private void OnApplySettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings();
 
         private void OnResetSettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings(10, 1.2);
@@ -194,16 +194,42 @@ namespace MowingMachine
 
         private void GenerateNewMap()
         {
-            int count = 5;
-            for (int x = 0; x < _currentMapSample.Length; x++)
+            var rng = new Random();
+            
+            // Configuration
+            const int mapSize = 10;
+            var map = new int[mapSize][];
+            
+            var chanceOfFieldAsList = new Dictionary<FieldType, int>
             {
-                for (int y = 0; y < _currentMapSample.Length; y++)
-                {
-                    if (count-- == 0)
-                        return;
+                { FieldType.Grass, 60 },
+                { FieldType.Sand, 15 },
+                { FieldType.CobbleStone, 15 },
+                { FieldType.Water, 10 },
+            }.ToList();
+            
+            for (int x = 0; x < map.Length; x++)
+            {
+                map[x] = new int[mapSize];
+                
+                for (int y = 0; y < map.Length; y++)
+                    map[x][y] = (int) GetRandom(chanceOfFieldAsList);
+            }
 
-                    _newlyGeneratedMapSample[x][y] = 6;
-                }
+            map[5][7] = (int) FieldType.MowingMachine;
+            
+            _newlyGeneratedMapSample = map.DeepClone();
+            
+            FieldType GetRandom(IReadOnlyList<KeyValuePair<FieldType, int>> items)
+            {
+                int index = rng.Next(items.Select(i => i.Value).Sum());
+
+                int sum = 0;
+                int i = 0;
+                while (sum < index)
+                    sum += items[i++].Value;
+
+                return items[Math.Max(0, i - 1)].Key;
             }
         }
 
