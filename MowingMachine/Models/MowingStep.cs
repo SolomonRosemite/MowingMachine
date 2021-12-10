@@ -6,11 +6,10 @@ namespace MowingMachine.Models
     public class MowingStep
     {
         // Todo: Revert
-        public MowingStep(Queue<MoveDirection> turns, MoveDirection moveDirection, FieldType fieldType, Offset finalPos)
+        public MowingStep(Queue<MoveDirection> turns, MoveDirection moveDirection, FieldType fieldType)
         // public MowingStep(Queue<MoveDirection> turns, MoveDirection moveDirection, FieldType fieldType)
         {
             Turns = turns;
-            FinalPos = finalPos;
             MoveDirection = moveDirection;
             FieldType = fieldType;
             var expense = Constants.TranslateMoveToExpense(fieldType) + turns.Count * Constants.TurnExpense;
@@ -22,7 +21,6 @@ namespace MowingMachine.Models
             TotalEnergyExpense = expense;
         }
 
-        public Offset FinalPos { get; }
         public Queue<MoveDirection> Turns { get; }
         public FieldType FieldType { get; }
         public MoveDirection MoveDirection { get; }

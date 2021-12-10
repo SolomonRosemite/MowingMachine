@@ -6,7 +6,7 @@
 
         public FieldOfView(int[][] fov)
         {
-            this._fov = fov;
+            _fov = fov;
         }
 
         public FieldType CenterCasted => (FieldType) _fov[1][1];

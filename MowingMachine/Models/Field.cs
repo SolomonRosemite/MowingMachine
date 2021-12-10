@@ -25,14 +25,11 @@ namespace MowingMachine.Models
 
         public FieldType Type { get; }
         public Offset Offset { get;  }
-        public List<Field>? NeighborFields { get; private set;  }
+        public List<Field> NeighborFields { get; }
         public bool IsVisited { get; set;  }
 
         public void UpdateFieldNeighbor(Field field)
         {
-            if (NeighborFields is null)
-                throw new ArgumentException("Tried to update neighbors but list is null.");
-            
             if (!Offset.AreNeighbors(field.Offset))
                 return;
 
