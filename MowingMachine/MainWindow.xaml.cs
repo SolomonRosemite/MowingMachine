@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using MowingMachine.Common;
@@ -184,6 +185,17 @@ namespace MowingMachine
 
         private void OnResetSettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings(10, 1.2);
 
+        public void Restart()
+        {
+            Console.WriteLine("Restarting...");
+            Thread.Sleep(1000);
+            OnGenerateNewMapClick(null, null);
+            Thread.Sleep(500);
+            StartSimulationClick(null, null);
+            Thread.Sleep(10);
+            StartSimulationClick(null, null);
+        }
+        
         private void OnGenerateNewMapClick(object sender, RoutedEventArgs e)
         {
             _newlyGeneratedMapSample = _currentMapSample.DeepClone();
@@ -205,7 +217,7 @@ namespace MowingMachine
                 { FieldType.Grass, 50 },
                 { FieldType.Sand, 10 },
                 { FieldType.CobbleStone, 10 },
-                { FieldType.Water, 30 },
+                { FieldType.Water, 10 },
             }.ToList();
             
             for (int x = 0; x < map.Length; x++)

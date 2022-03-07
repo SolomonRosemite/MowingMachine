@@ -18,7 +18,7 @@ namespace MowingMachine
             InitializeComponent();
 
             var mapManager = new MapManager(map, mowingMachineEnergy, mainWindow);
-            _mowingMachine = new MyMowingMachine(mapManager, mowingMachineEnergy);
+            _mowingMachine = new MyMowingMachine(mainWindow, mapManager, mowingMachineEnergy);
 
             mapManager.OnUpdateMap += UpdateMap;
             

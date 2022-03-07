@@ -37,7 +37,12 @@ namespace MowingMachine.Models
             if (x < 0 || y < 0)
             {
                 
+            } else if (x == 1 && y == 5)
+            {
+                
             }
+
+            Console.WriteLine(x + " - " + y);
             
             var nextPreviousField = (FieldType) _map[x][y];
             
