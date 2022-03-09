@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 using System.Windows;
 
 namespace MowingMachine
@@ -16,7 +10,7 @@ namespace MowingMachine
     {
         [DllImport("kernel32.dll")]
         private static extern bool AttachConsole(int dwProcessId);
-        private const int AttachParentProcess = -1;
+        private const int _AttachParentProcess = -1;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -29,7 +23,7 @@ namespace MowingMachine
         /// </summary>
         private static void AttachToParentConsole()
         {
-            AttachConsole(AttachParentProcess);
+            AttachConsole(_AttachParentProcess);
         }
     }
 }

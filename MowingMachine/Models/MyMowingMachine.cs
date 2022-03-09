@@ -17,11 +17,9 @@ namespace MowingMachine.Models
         // These are going to be all the coordinates we go, to mow the grass at that coordinate.
         private readonly List<Field> _discoveredFields = new();
 
-        private readonly List<(MowingStep, List<Field>, Offset)> _moves = new();
-
         private readonly Queue<MowingStep> _pathFromChargingStationToRecentPosition = new();
 
-        private readonly Queue<MowingStep> _pathTheChargingStation = new();
+        private readonly Queue<MowingStep> _pathToChargingStation = new();
 
         // Contains information about the map
         private readonly MapManager _mapManager;
@@ -70,36 +68,6 @@ namespace MowingMachine.Models
 
         public bool PerformMove()
         {
-            // Console.WriteLine("----------------------------");
-            // Console.WriteLine(_currentField.Offset);
-            // Console.WriteLine(_currentField.Type);
-            // var y = _discoveredFields
-            //     .SelectMany(x => x.NeighborFields)
-            //     .FirstOrDefault(nf => nf.Offset.CompareTo(new Offset(-2, -3)));
-            // if (y is not null)
-            // {
-            //     if (y.Type is not FieldType.Water)
-            //     {
-            //         Console.WriteLine("*************************");
-            //         Console.WriteLine(y.Offset);
-            //         Console.WriteLine(y.Type);
-            //         Console.WriteLine(y.IsVisited);
-            //     }
-            //     else
-            //     {
-            //         Console.WriteLine("#################################");
-            //         Console.WriteLine(y.Offset);
-            //         Console.WriteLine(y.Type);
-            //         Console.WriteLine(y.IsVisited);
-            //     }
-            // }
-            // Console.WriteLine("----------------------------");
-            
-            if (_mowingSteps.Any(s => s.FieldType is FieldType.Water) || _discoveredFields.Any(f => f.Type is FieldType.Water))
-            {
-                
-            }
-            
             if (!_mapManager.Verify())
             {
                 return false;
@@ -109,7 +77,7 @@ namespace MowingMachine.Models
                 PerformOngoingSteps();
                 return false;
             } 
-            else if (_pathTheChargingStation.Any() || _finalRunToChargingStation)
+            else if (_pathToChargingStation.Any() || _finalRunToChargingStation)
             {
                 MoveToChargingStation();
                 return false;
@@ -121,11 +89,6 @@ namespace MowingMachine.Models
             }
 
             var calculatedSteps = CalculateNextMove();
-
-            if (calculatedSteps.Any(s => s.FieldType == FieldType.Water))
-            {
-                
-            }
             
             if (!calculatedSteps.Any())
             {
@@ -135,11 +98,11 @@ namespace MowingMachine.Models
 
             var stepsToChargingStation = CalculateStepsToGoal(calculatedSteps.Last().MoveDirection, new Offset(0, 0));
 
-            var needsToRefuelFirst = NeedsToRefuel(calculatedSteps, stepsToChargingStation);
-            if (needsToRefuelFirst)
+            var hasEnoughFuel = HasEnoughFuel(calculatedSteps, stepsToChargingStation);
+            if (!hasEnoughFuel)
             {
                 foreach (var mowingStep in stepsToChargingStation)
-                    _pathTheChargingStation.Enqueue(mowingStep);
+                    _pathToChargingStation.Enqueue(mowingStep);
                 
                 MoveToChargingStation();
                 return false;
@@ -152,10 +115,6 @@ namespace MowingMachine.Models
         private void MoveBackToRecentPosition()
         {
             var nextStep = _pathFromChargingStationToRecentPosition.Dequeue();
-
-            // if (!_pathFromChargingStationToRecentPosition.Any())
-            //     return;
-            
             _currentFacingDirection = nextStep.MoveDirection;
 
             var newOffset = _currentField.Offset.Add(new Offset(nextStep.MoveDirection));
@@ -165,8 +124,6 @@ namespace MowingMachine.Models
         private void PerformOngoingSteps()
         {
             _tempOffset ??= _currentField.Offset;
-            var currentOffset = _currentField.Offset;
-            var currentOffset2 = _tempOffset;
 
             var step = _mowingSteps.Dequeue();
             var (x, y) = step.MoveDirection.TranslateDirectionToOffset();
@@ -219,25 +176,6 @@ namespace MowingMachine.Models
             return steps;
         }
         
-        private IEnumerable<MowingStep> CalculateStepsToGoal(MoveDirection startingDirection, List<Offset> path)
-        {
-            var steps = new List<MowingStep>();
-            var currentDirection = startingDirection;
-            for (int i = path.Count - 2; i >= 0; i--)
-            {
-                var direction = path[i].Subtract(path[i + 1]).TranslateOffsetToDirection();
-
-                var step = CalculateStepExpense(direction,
-                    currentDirection,
-                    _discoveredFields.First(f => f.Offset.CompareTo(path[i])).Type);
-
-                currentDirection = direction;
-                steps.Add(step);
-            }
-
-            return steps;
-        }
-
         private static MowingStep CalculateStepExpense(MoveDirection direction, MoveDirection currentFacingDirection,
             FieldType currentFieldType)
         {
@@ -253,19 +191,6 @@ namespace MowingMachine.Models
         {
             _charge -= step.TotalEnergyExpense;
 
-            Console.WriteLine("--------------------");
-            Console.WriteLine("Offset: " + newOffset);
-            Console.WriteLine("Type: " + updatePrevFieldType);
-
-            var x = _discoveredFields.Where(f => f.Offset.CompareTo(new Offset(-2, -3)));
-            var y = _discoveredFields
-                .Where(f => !f.Offset.CompareTo(new Offset(-1,-3)) && !f.Offset.CompareTo(new Offset(-2,-2)) && f.NeighborFields.Any(nf => nf.Offset.CompareTo(new Offset(-2, -3))));
-
-            if (x.Any() || y.Any())
-            {
-                
-            }
-            
             _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType, _charge);
 
             if (_discoveredFields.Any() && updatePrevFieldType == FieldType.ChargingStation)
@@ -299,23 +224,21 @@ namespace MowingMachine.Models
             moves.Enqueue(finalDirection);
             return moves;
         }
+        
         private void Complete()
         {
             Console.WriteLine("Mowing complete!");
-            
             _mainWindow.Restart();
         }
 
-        private bool NeedsToRefuel(IEnumerable<MowingStep> stepsToNextField, IEnumerable<MowingStep> stepsToChangingStation)
+        private bool HasEnoughFuel(IEnumerable<MowingStep> stepsToNextField, IEnumerable<MowingStep> stepsToChangingStation)
         {
             var totalRequestEnergy = stepsToNextField
                                          .Select(s => s.TotalEnergyExpense).Sum() +
                                      stepsToChangingStation
                                          .Select(s => s.TotalEnergyExpense).Sum();
 
-            bool hasEnoughFuel = _charge >= totalRequestEnergy;
-            
-            return !hasEnoughFuel;
+            return _charge >= totalRequestEnergy;
         }
 
         private void PerformStep(List<MowingStep> steps)
@@ -356,37 +279,12 @@ namespace MowingMachine.Models
                     .Where(field => HasWalkableNeighborField(field, out values))
                     .Select(_ => values.Item1).ToList();
                 
-                // var allUnvisitedFields = _discoveredFields
-                //     .Where(f => f.NeighborFields.Any(nf =>
-                //         !nf.IsVisited && nf.CanBeWalkedOn() && nf.Type != FieldType.ChargingStation))
-                //     .ToList();
-                
                 var availablePaths = allUnvisitedFields.Select(unvisitedField =>
                     CalculatePathToGoal(_discoveredFields.Concat(_discoveredFields.SelectMany(f => f.NeighborFields)), _currentField.Offset, unvisitedField.Offset))
                     .ToList();
-                // var allUnvisitedFields = _discoveredFields
-                //     .Where(f => f.NeighborFields.Any(nf =>
-                //         !nf.IsVisited && nf.CanBeWalkedOn() && nf.Type != FieldType.ChargingStation))
-                //     .ToList();
-                //
-                // var availablePaths = allUnvisitedFields.Select(unvisitedField =>
-                //     CalculatePathToGoal(_currentField.Offset, unvisitedField.Offset))
-                //     .ToList();
 
-                // TODO: Continue here
-                // TODO: Why is path directing us to offset: x=0 y=3 if there is water?
-                // Also we should be going right then, not left.
                 var path = availablePaths.OrderBy(p => p.Count).FirstOrDefault();
 
-                if (path?.FirstOrDefault(o => o.CompareTo(new Offset(0, -3))) is not null)
-                {
-                    
-                }
-                
-                // var path = availablePaths.OrderBy(p => p.Count).FirstOrDefault();
-
-                
-                
                 return path is not null
                     ? CalculateStepsToGoal(_currentFacingDirection, path.Last()).ToList()
                     : new List<MowingStep>();
@@ -396,7 +294,7 @@ namespace MowingMachine.Models
 
             return new List<MowingStep> { nextStep };
 
-            bool HasWalkableNeighborField(Field field,out (Field, MoveDirection) result)
+            bool HasWalkableNeighborField(Field field, out (Field, MoveDirection) result)
             {
                 var fieldIndex = field.NeighborFields?.FindIndex(f => !f.IsVisited && f.CanBeWalkedOn() && f.Type is not FieldType.ChargingStation);
                 result = (null, MoveDirection.Bottom);
@@ -418,7 +316,7 @@ namespace MowingMachine.Models
         
         private void MoveToChargingStation()
         {
-            if (!_pathTheChargingStation.Any())
+            if (!_pathToChargingStation.Any())
             {
                 _finalRunToChargingStation = false;
                 _currentField.Offset.UpdateOffset(new Offset(0, 0));
@@ -434,14 +332,13 @@ namespace MowingMachine.Models
                 return;
             }
             
-            var nextStep = _pathTheChargingStation.Dequeue();
+            var nextStep = _pathToChargingStation.Dequeue();
 
-            _finalRunToChargingStation = !_pathTheChargingStation.Any();
+            _finalRunToChargingStation = !_pathToChargingStation.Any();
             
             _currentFacingDirection = nextStep.MoveDirection;
 
             var newOffset = _currentField.Offset.Add(new Offset(nextStep.MoveDirection));
-            // var newOffset = _currentField.Offset.Subtract(new Offset(nextStep.MoveDirection));
             
             _currentField = Move(nextStep, newOffset, _currentFieldType);
         }
@@ -458,8 +355,6 @@ namespace MowingMachine.Models
             {
                 var cellInfo = nextCoordinatesToVisit.Dequeue();
 
-                // Console.WriteLine(nextCoordinatesToVisit.Count);
-        
                 if (GetNeighborCells(cellInfo))
                     break;
             }
@@ -503,11 +398,6 @@ namespace MowingMachine.Models
             {
                 var value = fields
                     .FirstOrDefault(f => f.Offset.CompareTo(new Offset(offset.X, offset.Y)))?.Type;
-
-                if (value is null)
-                {
-                    
-                }
                 
                 value ??= FieldType.Water;
                 

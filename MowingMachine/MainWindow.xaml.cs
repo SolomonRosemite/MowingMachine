@@ -34,7 +34,7 @@ namespace MowingMachine
         {
             InitializeComponent();
 
-            ApplySettings(10, 1.2, false);
+            ApplySettings(5, 1, false);
         }
 
         private void InitializeApp()
@@ -137,7 +137,7 @@ namespace MowingMachine
             {
                 // Update charge
                 SetChargeValue(e.Charge);
-
+            
                 var newValue = totalMowedGrass / totalGrass * 100;
                 SetMowedGrassValue(Math.Max(newValue, MowedGrassCountProgressBar.Value));
                 
@@ -184,7 +184,8 @@ namespace MowingMachine
         private void OnApplySettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings();
 
         private void OnResetSettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings(10, 1.2);
-
+        private void OnSaveCurrentMapButtonClick(object sender, RoutedEventArgs e) => Constants.SaveMapAsJson(_currentMapSample);
+        
         public void Restart()
         {
             Console.WriteLine("Restarting...");
@@ -206,43 +207,13 @@ namespace MowingMachine
 
         private void GenerateNewMap()
         {
+            const int size = 15;
             var rng = new Random();
+            var map = MapGeneration.GenerateMapGetMap(size, rng.Next());
             
-            // Configuration
-            const int mapSize = 10;
-            var map = new int[mapSize][];
-            
-            var chanceOfFieldAsList = new Dictionary<FieldType, int>
-            {
-                { FieldType.Grass, 50 },
-                { FieldType.Sand, 10 },
-                { FieldType.CobbleStone, 10 },
-                { FieldType.Water, 10 },
-            }.ToList();
-            
-            for (int x = 0; x < map.Length; x++)
-            {
-                map[x] = new int[mapSize];
-                
-                for (int y = 0; y < map.Length; y++)
-                    map[x][y] = (int) GetRandom(chanceOfFieldAsList);
-            }
-
-            map[5][7] = (int) FieldType.MowingMachine;
+            map[rng.Next(size)][rng.Next(size)] = (int) FieldType.MowingMachine;
             
             _newlyGeneratedMapSample = map.DeepClone();
-            
-            FieldType GetRandom(IReadOnlyList<KeyValuePair<FieldType, int>> items)
-            {
-                int index = rng.Next(items.Select(i => i.Value).Sum());
-
-                int sum = 0;
-                int i = 0;
-                while (sum < index)
-                    sum += items[i++].Value;
-
-                return items[Math.Max(0, i - 1)].Key;
-            }
         }
 
         private void AddMovement(string movement)

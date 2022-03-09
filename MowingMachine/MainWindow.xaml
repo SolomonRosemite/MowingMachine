@@ -87,6 +87,7 @@
 
                             <DockPanel>
                                 <Button Margin="5" FontSize="12" Height="30" Content="Apply settings" Click="OnApplySettingsButtonClick" />
+                                <Button Margin="5" FontSize="12" Height="30" Content="Save current map" Click="OnSaveCurrentMapButtonClick" />
                                 <Button Margin="5" FontSize="12" Height="30" Content="Reset settings" Click="OnResetSettingsButtonClick" />
                             </DockPanel>
                         </StackPanel>

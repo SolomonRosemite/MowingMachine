@@ -33,16 +33,6 @@ namespace MowingMachine.Models
             
             var (mowingMachineX, mowingMachineY) = GetMowingMachineCoordinate();
             var (x, y) = _map.GetTranslatedCoordinate(mowingMachineX, mowingMachineY, step.MoveDirection);
-
-            if (x < 0 || y < 0)
-            {
-                
-            } else if (x == 1 && y == 5)
-            {
-                
-            }
-
-            Console.WriteLine(x + " - " + y);
             
             var nextPreviousField = (FieldType) _map[x][y];
             
