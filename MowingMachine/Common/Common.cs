@@ -55,6 +55,26 @@ namespace MowingMachine.Common
             return elements;
         }
 
+        public static UIElement GetUiElement(int fieldType, int x, int y)
+        {
+            FieldType type = (FieldType)fieldType;
+                
+            var element = new Button
+            {
+                Content = new Image
+                {
+                    Source = FieldTypeToItem(type),
+                    Stretch = Stretch.Fill,
+                    Tag = type,
+                },
+            };
+            
+            Grid.SetRow(element, y);
+            Grid.SetColumn(element, x);
+
+            return element;
+        }
+
         private static BitmapImage FieldTypeToItem(FieldType fieldType)
         {
             return fieldType switch

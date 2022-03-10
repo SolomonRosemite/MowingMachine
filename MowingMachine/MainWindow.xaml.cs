@@ -207,7 +207,7 @@ namespace MowingMachine
 
         private void GenerateNewMap()
         {
-            const int size = 15;
+            const int size = 30;
             var rng = new Random();
             var map = MapGeneration.GenerateMapGetMap(size, rng.Next());
             
