@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using MowingMachine.Models;
 
 namespace MowingMachine.Common
@@ -115,6 +116,16 @@ namespace MowingMachine.Common
         public static int[][] DeepClone(this int[][] value)
         {
             return value.Select(a => a.ToArray()).ToArray();
+        }
+
+        public static Node ToNode(this Field value)
+        {
+            return ToNode(value.Offset, value.CanBeWalkedOn());
+        }
+
+        public static Node ToNode(this Offset value, bool walkable)
+        {
+            return new Node(new Vector2(value.X, value.Y), walkable);
         }
     }
 }

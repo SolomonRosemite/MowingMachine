@@ -1,4 +1,5 @@
-﻿using MowingMachine.Common;
+﻿using System;
+using MowingMachine.Common;
 
 namespace MowingMachine.Models
 {
@@ -34,5 +35,30 @@ namespace MowingMachine.Models
         }
         
         public override string ToString() => $"{X}-{Y}";
+
+        public override bool Equals(object obj)
+        {
+            return obj is Offset item && CompareTo(item);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(X.GetHashCode(), Y.GetHashCode());
+        }
+
+        public static bool operator ==(Offset obj1, Offset obj2) => CompareTo(obj1, obj2);
+
+        public static bool operator !=(Offset obj1, Offset obj2) => !CompareTo(obj1, obj2);
+
+        private static bool CompareTo(Offset obj1, Offset obj2)
+        {
+            if (obj1 is null && obj2 is null)
+                return true;
+            
+            if (obj1 is null || obj2 is null)
+                return false;
+            
+            return obj1.CompareTo(obj2);
+        }
     }
 }
