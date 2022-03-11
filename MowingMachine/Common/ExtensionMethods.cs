@@ -117,15 +117,5 @@ namespace MowingMachine.Common
         {
             return value.Select(a => a.ToArray()).ToArray();
         }
-
-        public static Node ToNode(this Field value)
-        {
-            return ToNode(value.Offset, value.CanBeWalkedOn());
-        }
-
-        public static Node ToNode(this Offset value, bool walkable)
-        {
-            return new Node(new Vector2(value.X, value.Y), walkable);
-        }
     }
 }

@@ -133,7 +133,6 @@ namespace MowingMachine
             var totalGrass = GetCount(_currentMapSample, FieldType.Grass) - 1;
             var totalMowedGrass = GetCount((int[][]) e.Map.Clone(), FieldType.MowedLawn);
 
-            // TODO: 
             Application.Current.Dispatcher.Invoke(delegate
             {
                 // Update charge
@@ -221,7 +220,7 @@ namespace MowingMachine
         {
             _movements += $"{++_movementCount}: {movement}\n";
             MovementsTextBox.Text = _movements;
-            // MovementsTextBox.ScrollToEnd();
+            MovementsTextBox.ScrollToEnd();
         }
 
         private void ShowPopup(string title, string description)

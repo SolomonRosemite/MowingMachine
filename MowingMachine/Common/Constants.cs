@@ -37,74 +37,64 @@ namespace MowingMachine.Common
             {
                 int[][] sample =
                 {
-                    // new[] {1, 1, 6, 1, 1, 6, 1, 0, 3, 1},
-                    // new[] {1, 0, 1, 0, 1, 1, 1, 1, 0, 3},
-                    // new[] {3, 1, 0, 3, 1, 6, 1, 1, 1, 6},
-                    // new[] {1, 6, 3, 1, 1, 6, 1, 1, 3, 1},
-                    // new[] {1, 1, 1, 1, 1, 1, 6, 1, 1, 3},
-                    // new[] {3, 1, 1, 6, 1, 1, 1, 5, 3, 1},
-                    // new[] {1, 3, 1, 3, 6, 1, 3, 1, 1, 1},
-                    // new[] {3, 3, 1, 1, 1, 0, 3, 1, 3, 3},
-                    // new[] {6, 3, 1, 0, 1, 6, 0, 6, 3, 1},
-                    // new[] {1, 1, 1, 1, 1, 1, 3, 1, 1, 0},
-                    // new[] {1, 1, 1, 1, 1, 1, 1, 6, 6, 6, },
-                    // new[] {1, 1, 6, 6, 6, 1, 1, 1, 1, 6, },
-                    // new[] {1, 1, 6, 6, 6, 6, 1, 1, 1, 6, },
-                    // new[] {1, 1, 6, 6, 6, 6, 1, 1, 1, 1, },
-                    // new[] {1, 1, 1, 1, 1, 3, 1, 1, 1, 1, },
-                    // new[] {1, 1, 1, 1, 1, 3, 1, 1, 1, 1, },
-                    // new[] {1, 1, 1, 1, 1, 3, 1, 1, 5, 1, },
-                    // new[] {1, 6, 3, 3, 3, 3, 1, 0, 0, 0, },
-                    // new[] {1, 1, 3, 1, 1, 1, 1, 0, 6, 0, },
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, },
+                    new[] {1, 1, 1, 1, 1, 1, 1, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 6, 6, 6},
+                    new[] {1, 1, 6, 6, 6, 1, 1, 1, 1, 6, 1, 1, 6, 6, 6, 1, 1, 1, 1, 6},
+                    new[] {1, 1, 6, 6, 6, 6, 1, 1, 1, 6, 1, 1, 6, 6, 6, 6, 1, 1, 1, 6},
+                    new[] {1, 1, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 1, 1, 1, 1},
+                    new[] {1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1},
+                    new[] {1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1},
+                    new[] {1, 1, 1, 1, 1, 3, 1, 1, 0, 1, 1, 1, 1, 1, 1, 3, 1, 1, 5, 1},
+                    new[] {1, 6, 3, 3, 3, 3, 1, 0, 0, 0, 1, 6, 3, 3, 3, 3, 1, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 1, 0, 6, 0, 1, 1, 3, 1, 1, 1, 1, 0, 6, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
                     
-                    // new[] {1, 1, 1, 1, 1, 1, 1, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 6, 6, 6},
-                    // new[] {1, 1, 6, 6, 6, 1, 1, 1, 1, 6, 1, 1, 6, 6, 6, 1, 1, 1, 1, 6},
-                    // new[] {1, 1, 6, 6, 6, 6, 1, 1, 1, 6, 1, 1, 6, 6, 6, 6, 1, 1, 1, 6},
-                    // new[] {1, 1, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 1, 1, 1, 1},
-                    // new[] {1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1},
-                    // new[] {1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1},
-                    // new[] {1, 1, 1, 1, 1, 3, 1, 1, 0, 1, 1, 1, 1, 1, 1, 3, 1, 1, 5, 1},
-                    // new[] {1, 6, 3, 3, 3, 3, 1, 0, 0, 0, 1, 6, 3, 3, 3, 3, 1, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 1, 0, 6, 0, 1, 1, 3, 1, 1, 1, 1, 0, 6, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    //
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
-                    // new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
+                    new[] {1, 1, 3, 1, 1, 1, 0, 0, 0, 0, 1, 1, 3, 1, 1, 1, 0, 0, 0, 0},
                 };
 
-                return GetMapFromJson();
+                return GetMapFromJson() ?? sample;
             }
         }
 
         private static int[][] GetMapFromJson()
         {
-            var json = File.ReadAllText(
-                GetJsonFileName(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Maps\", false));
+            try
+            {
+                var json = File.ReadAllText(
+                    GetJsonFileName(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Maps\", false));
 
-            Console.WriteLine(GetJsonFileName(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Maps\", false));
-            return JsonSerializer.Deserialize<int[][]>(json);
+                Console.WriteLine(GetJsonFileName(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Maps\", false));
+                return JsonSerializer.Deserialize<int[][]>(json);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to load existing map. See Exception for more info.");
+                Console.WriteLine(e);
+            }
+
+            return null;
         }
 
         public static void SaveMapAsJson(int[][] map)
         {
-            var jsonContent = JsonSerializer.Serialize(map);
-            var fileName = GetJsonFileName(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Maps\");
-
             try
             {
+                var jsonContent = JsonSerializer.Serialize(map);
+                var fileName = GetJsonFileName(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Maps\");
+
                 File.WriteAllText(fileName, jsonContent);
             }
             catch (Exception e)
             {
+                Console.WriteLine("Failed to save map. See Exception for more info.");
                 Console.WriteLine(e);
             }
         }

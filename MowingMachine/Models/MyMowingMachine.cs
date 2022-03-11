@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Numerics;
-using System.Text.Json;
-using MoreLinq.Extensions;
 using MowingMachine.Common;
 
 namespace MowingMachine.Models
@@ -35,10 +31,9 @@ namespace MowingMachine.Models
         private Offset _tempOffset;
         private readonly double _maxChange;
         private double _charge;
+        
+        private int _hereCount;
 
-        private int _total = 0;
-        private int _hit = 0;
-        private int _miss = 0;
 
         public MyMowingMachine(MainWindow mainWindow, MapManager mapManager, double maxChange)
         {
@@ -300,54 +295,13 @@ namespace MowingMachine.Models
 
         private List<MowingStep> CalculateNextMove()
         {
-            var (successful, _, direction) = HasWalkableNeighborField(_currentField);
+            var (successful, direction) = HasWalkableNeighborField(_currentField);
             
             if (!successful)
             {
-                // var allUnvisitedFields = GetAllUnvisitedFields();
-                //
-                // var availablePaths = GetAllAvailablePaths(allUnvisitedFields);
-                // var availablePaths = GetAllAvailablePaths(allUnvisitedFields).ToList();
-                // Console.WriteLine(availablePaths.Count());
-                // var list = availablePaths.Sort(p => p.Count);
-                // var list = availablePaths.OrderBy(p => p.Count);
-                // int len = availablePaths.Count();
-                // Console.WriteLine("Len: " + len);
-                //
-                // var first = list.FirstOrDefault();
-                //
-                // bool hit = false;
-                // if (first is not null)
-                // {
-                //     var l = availablePaths.ToList();
-                //     var items = l.Where(f => f.Count == first.Count);
-                //
-                //     foreach (var item in items)
-                //     {
-                //         int index = l.IndexOf(item);
-                //
-                //         if (index + 1 == len)
-                //             hit = true;
-                //
-                //         Console.WriteLine("Index: " + index);
-                //     }
-                // }
-                //
-                // if (hit) { _hit++; } else { _miss++; }
-                // _total++;
-                //
-                // Console.WriteLine("Metrics: ");
-                // Console.WriteLine("Hit: " + _hit);
-                // Console.WriteLine("Miss: " + _miss);
-                // Console.WriteLine("Total: " + _total);
-                // Console.WriteLine("Total%: " + (double)_hit / (double)_total);
-                //
-                // var path = list.FirstOrDefault();
-                Console.WriteLine("Here");
-                // var path = availablePaths.LastOrDefault();
-
-                var res = BetterCalculateStepsToGoal(_currentFacingDirection).ToList();
+                Console.WriteLine("CalculateNextMove: " + ++_hereCount);
                 
+                var res = BetterCalculateStepsToGoal(_currentFacingDirection).ToList();
                 return res;
             }
             
@@ -356,27 +310,14 @@ namespace MowingMachine.Models
             return new List<MowingStep> { nextStep };
         }
 
-        private IEnumerable<List<Offset>> GetAllAvailablePaths(IEnumerable<Field> allUnvisitedFields)
-        {
-            return allUnvisitedFields.Select(unvisitedField =>
-                CalculatePathToGoal(_discoveredFields.Concat(_discoveredFields.SelectMany(f => f.NeighborFields)), _currentField.Offset, unvisitedField.Offset));
-        }
-
-        private IEnumerable<Field> GetAllUnvisitedFields()
-        {
-            return _discoveredFields.Select(HasWalkableNeighborField)
-                .Where(result => result.Item1)
-                .Select(result => result.Item2);
-        }
-
-        private static (bool, Field, MoveDirection) HasWalkableNeighborField(Field field)
+        private static (bool, MoveDirection) HasWalkableNeighborField(Field field)
         {
             var fieldIndex = field.NeighborFields?.FindIndex(f => !f.IsVisited && f.CanBeWalkedOn() && f.Type is not FieldType.ChargingStation);
                 
             if (fieldIndex is null or -1)
-                return (false, null, MoveDirection.Bottom);
+                return (false, MoveDirection.Bottom);
 
-            return (true, field.NeighborFields[fieldIndex.Value], fieldIndex switch
+            return (true, fieldIndex switch
             {
                 0 => MoveDirection.Top,
                 1 => MoveDirection.Right,
@@ -418,125 +359,8 @@ namespace MowingMachine.Models
         private List<Offset> CalculatePathToGoal(IEnumerable<Field> fields, Offset start, Offset goal)
         {
             return OldWay(fields, start, goal);
-            var t = !_currentField.Offset.CompareTo(new Offset(-3, 1));
-            
-            // if (t)
-            // {
-            //     return OldWay(fields, start, goal);
-            // }
-            
-            var startVector = new Vector2(2, 3);
-            var endVector = new Vector2(2, 1);
-            // var startVector = new Vector2(start.X, start.Y);
-            // var endVector = new Vector2(goal.X, goal.Y);
-
-            var aStar = new Astar(FieldsToNodeGrid());
-
-            var x = aStar.FindPath(startVector, endVector);
-            // var x = aStar.FindPath(startVector, endVector).ToList();
-
-            return null;
         }
 
-        private List<List<Node>> FieldsToNodeGrid()
-        {
-            return new List<List<Node>>
-            {
-                new() { new Node(new Vector2(0, 4), false), new Node(new Vector2(1, 4), false), new Node(new Vector2(2, 4), false), new Node(new Vector2(3, 4), false) },
-                new() {new Node(new Vector2(0, 3), false), new Node(new Vector2(1, 3), true), new Node(new Vector2(2, 3), true), new Node(new Vector2(3, 3), true) },
-                new() {new Node(new Vector2(0, 2), false), new Node(new Vector2(1, 2), true), new Node(new Vector2(2, 2), false), new Node(new Vector2(3, 2), true) },
-                new() {new Node(new Vector2(0, 1), false), new Node(new Vector2(1, 1), true), new Node(new Vector2(2, 1), true), new Node(new Vector2(3, 1), false) },
-                new() { new Node(new Vector2(0, 0), false), new Node(new Vector2(1, 0), false), new Node(new Vector2(2, 0), false), new Node(new Vector2(3, 0), false) },
-                // new() { new Node(new Vector2(0, 2), true), new Node(new Vector2(1, 2), true), new Node(new Vector2(2, 2), true) },
-                // new() { new Node(new Vector2(0, 1), true), new Node(new Vector2(1, 1), false), new Node(new Vector2(2, 1), true) },
-                // new() { new Node(new Vector2(0, 0), true), new Node(new Vector2(1, 0), true), new Node(new Vector2(2, 0), false) },
-                // new() { new Node(new Vector2(-1, 1), true), new Node(new Vector2(0, 1), true), new Node(new Vector2(-1, 1), true) },
-                // new() { new Node(new Vector2(-1, 0), true), new Node(new Vector2(0, 0), false), new Node(new Vector2(-1, 0), true) },
-                // new() { new Node(new Vector2(-1, -1), true), new Node(new Vector2(0, -1), true), new Node(new Vector2(-1, -1), false) },
-            };
-            
-            var nodes = new List<List<Node>>();
-
-            var orderedFields = _discoveredFields.OrderBy(f => f.Offset.Y);
-            var maxY = orderedFields.First().Offset.Y;
-
-            var currentY = maxY;
-            while (true)
-            {
-                var rowNodes = GetRowOfNodesByFields(_discoveredFields, currentY++);
-
-                if (!rowNodes.Any())
-                    break;
-                
-                nodes.Insert(0, rowNodes);
-            }
-            
-            // Add walls at the top and bottom
-            var orderedFieldsByX = _discoveredFields.OrderBy(f => f.Offset.X);
-            var firstOffset = orderedFieldsByX.First().Offset;
-            var lastOffset = orderedFieldsByX.Last().Offset;
-
-            var maxWidth = Math.Max(lastOffset.X - firstOffset.X, firstOffset.X - lastOffset.X);
-
-            var topNodes = new List<Node>();
-            var bottomNodes = new List<Node>();
-            for (int x = 0; x < maxWidth; x++)
-            {
-                topNodes.Add(firstOffset.Add(x, -1).ToNode(false));
-                bottomNodes.Add(firstOffset.Add(x, 1).ToNode(false));
-            }
-            
-            // nodes.Insert(0, topNodes);
-            // nodes.Add(bottomNodes);
-            
-            var jsonContent = JsonSerializer.Serialize(nodes.Select(n => n.Select(nn => nn.Walkable)));
-
-            try
-            {
-                File.WriteAllText(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Test\file.json", jsonContent);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-
-            return nodes;
-        }
-
-        private static List<Node> GetRowOfNodesByFields(List<Field> fields, int y, bool addWalls = true)
-        {
-            // var fieldsAtAdjustedHeight = fields
-            var x = fields
-                .Where(f => f.NeighborFields is not null)
-                .SelectMany(f => f.NeighborFields)
-                .Concat(fields); 
-                
-            var z = x.DistinctBy(f => f.Offset);
-
-            Console.WriteLine("With DistinctBy: " + z.Count());
-            Console.WriteLine("Without DistinctBy: "+ x.Count());
-            Console.WriteLine("-------------------------------");
-
-            var fieldsAtAdjustedHeight = z.Where(f => f.Offset.Y == y);
-
-            var nodes = fieldsAtAdjustedHeight.Select(f => f.ToNode()).ToList();
-            nodes = nodes.OrderBy(n => n.Position.X).ToList();
-
-            if (!addWalls)
-                return nodes;
-
-            if (!nodes.Any())
-            {
-                return new List<Node>();
-            }
-            
-            // Add walls at the sides (left and right)
-            nodes.Insert(0, new Node(new Vector2(nodes.First().Position.X - 1, y), false));
-            nodes.Add(new Node(new Vector2(nodes.Last().Position.X + 1, y), false));
-
-            return nodes;
-        }
-        
         // Breadth first search (bfs)
         private List<Offset> BetterOldWay(Offset start)
         {
@@ -571,8 +395,8 @@ namespace MowingMachine.Models
             
             return tracedPath;
         }
-        
-        bool BetterGetNeighborCells(Dictionary<Offset, Offset> visitedCoordinates,
+
+        private bool BetterGetNeighborCells(IDictionary<Offset, Offset> visitedCoordinates,
             Queue<OffsetInfo> nextCoordinatesToVisit,
             OffsetInfo info,
             out Offset offset)
@@ -602,7 +426,7 @@ namespace MowingMachine.Models
             return false;
         }
 
-        (bool, Field) BetterIsValidField(Offset offset)
+        private (bool, Field) BetterIsValidField(Offset offset)
         {
             var field = _discoveredFields
                             .FirstOrDefault(f => f.Offset.CompareTo(new Offset(offset.X, offset.Y)))
