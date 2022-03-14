@@ -5,8 +5,6 @@ namespace MowingMachine.Models
 {
     public class MapManager
     {
-        public event EventHandler<OnUpdateMapEventArgs> OnUpdateMap;
-        
         public class OnUpdateMapEventArgs : EventArgs
         {
             public int[][] Map;
@@ -14,15 +12,17 @@ namespace MowingMachine.Models
             public string Movement;
         }
         
-        public MapManager(int[][] map, double fuel, MainWindow mainWindow)
+        public MapManager(SampleMapPage sampleMapPage, int[][] map, double fuel, MainWindow mainWindow)
         {
             this._map = map;
             _currentFuel = fuel;
             _mainWindow = mainWindow;
+            _sampleMapPage = sampleMapPage;
         }
 
         private MowingStep _currentlyWorkingMowingStep;
         private readonly MainWindow _mainWindow;
+        private readonly SampleMapPage _sampleMapPage;
         private readonly int[][] _map;
         private double _currentFuel;
         
@@ -46,7 +46,7 @@ namespace MowingMachine.Models
         {
             var args = new OnUpdateMapEventArgs {Map = (int[][]) this._map.Clone(), Charge = _currentFuel, Movement = movement};
             _mainWindow.UpdateValues(args);
-            OnUpdateMap?.Invoke(this, args);
+            _sampleMapPage.UpdateMap(args);
         }
 
         public bool Verify()

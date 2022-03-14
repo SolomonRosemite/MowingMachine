@@ -19,11 +19,9 @@ namespace MowingMachine
         {
             InitializeComponent();
 
-            var mapManager = new MapManager(map, mowingMachineEnergy, mainWindow);
-            _mowingMachine = new MyMowingMachine(mainWindow, mapManager, mowingMachineEnergy);
+            var mapManager = new MapManager(this, map, mowingMachineEnergy, mainWindow);
+            _mowingMachine = new MyMowingMachine(mapManager, mowingMachineEnergy);
 
-            mapManager.OnUpdateMap += UpdateMap;
-            
             var (columnDefinitions, rowDefinitions) =
                 Common.Common.GenerateDefinitions(map.Length, map.Length);
 
@@ -94,7 +92,7 @@ namespace MowingMachine
             });
         }
 
-        private void UpdateMap(object _, MapManager.OnUpdateMapEventArgs args)
+        public void UpdateMap(MapManager.OnUpdateMapEventArgs args)
         {
             Render(args.Map);
         }

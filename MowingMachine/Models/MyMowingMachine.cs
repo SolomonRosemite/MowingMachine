@@ -7,8 +7,6 @@ namespace MowingMachine.Models
 {
     public class MyMowingMachine
     {
-        private readonly MainWindow _mainWindow;
-        
         private readonly Queue<MowingStep> _mowingSteps = new();
 
         // These are going to be all the coordinates we go, to mow the grass at that coordinate.
@@ -32,13 +30,8 @@ namespace MowingMachine.Models
         private readonly double _maxChange;
         private double _charge;
         
-        private int _hereCount;
-
-
-        public MyMowingMachine(MainWindow mainWindow, MapManager mapManager, double maxChange)
+        public MyMowingMachine(MapManager mapManager, double maxChange)
         {
-            _mainWindow = mainWindow;
-            
             _mapManager = mapManager;
             _maxChange = maxChange;
             _charge = maxChange;
@@ -57,10 +50,10 @@ namespace MowingMachine.Models
 
             var neighbors = new List<Field>
             {
-                _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetTop)) ?? new Field(fov.TopCasted, offsetTop),
-                _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetRight)) ?? new Field(fov.RightCasted, offsetRight),
-                _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetBottom)) ?? new Field(fov.BottomCasted, offsetBottom),
-                _discoveredFields.SingleOrDefault(f => f.Offset.CompareTo(offsetLeft)) ?? new Field(fov.LeftCasted, offsetLeft),
+                _discoveredFields.SingleOrDefault(f => f.Offset == offsetTop) ?? new Field(fov.TopCasted, offsetTop),
+                _discoveredFields.SingleOrDefault(f => f.Offset == offsetRight) ?? new Field(fov.RightCasted, offsetRight),
+                _discoveredFields.SingleOrDefault(f => f.Offset == offsetBottom) ?? new Field(fov.BottomCasted, offsetBottom),
+                _discoveredFields.SingleOrDefault(f => f.Offset == offsetLeft) ?? new Field(fov.LeftCasted, offsetLeft),
             };
             
             return new Field(fieldType, offset, neighbors);
@@ -137,20 +130,25 @@ namespace MowingMachine.Models
                 _currentField = GetField(_mapManager.GetFieldsOfView(), _tempOffset, _currentFieldType);
                 _currentField.IsVisited = true;
 
-                if (_discoveredFields.Any(f => f.Offset.CompareTo(_currentField.Offset)))
+                if (_discoveredFields.Any(f => f.Offset == _currentField.Offset))
                 {
-                    _discoveredFields.Move(_discoveredFields.First(f => f.Offset.CompareTo(_currentField.Offset)),
+                    _discoveredFields.Move(_discoveredFields.First(f => f.Offset == _currentField.Offset),
                         _discoveredFields.Count);
                 }
                 else
                 {
                     // Update neighbor fields
-                    _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
+                    UpdateNeighbors();
                     _discoveredFields.Add(_currentField);
 
                     _tempOffset = null;
                 }
             }
+        }
+
+        private void UpdateNeighbors()
+        {
+            _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
         }
 
         private IEnumerable<MowingStep> BetterCalculateStepsToGoal(MoveDirection startingDirection, Func<Field, bool> predicate)
@@ -169,7 +167,7 @@ namespace MowingMachine.Models
 
                 var step = CalculateStepExpense(direction,
                     currentDirection,
-                    fields.First(f => f.Offset.CompareTo(path[i])).Type);
+                    fields.First(f => f.Offset == path[i]).Type);
 
                 currentDirection = direction;
                 steps.Add(step);
@@ -192,7 +190,7 @@ namespace MowingMachine.Models
 
                 var step = CalculateStepExpense(direction,
                     currentDirection,
-                    _discoveredFields.First(f => f.Offset.CompareTo(path[i])).Type);
+                    _discoveredFields.First(f => f.Offset == path[i]).Type);
 
                 currentDirection = direction;
                 steps.Add(step);
@@ -281,14 +279,14 @@ namespace MowingMachine.Models
             
             _currentField.IsVisited = true;
 
-            if (_discoveredFields.Any(f => f.Offset.CompareTo(_currentField.Offset)))
+            if (_discoveredFields.Any(f => f.Offset == _currentField.Offset))
             {
-                _discoveredFields.Move(_discoveredFields.First(f => f.Offset.CompareTo(_currentField.Offset)), _discoveredFields.Count);
+                _discoveredFields.Move(_discoveredFields.First(f => f.Offset == _currentField.Offset), _discoveredFields.Count);
                 return;
             }
             
             // Update neighbor fields
-            _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
+            UpdateNeighbors();
             _discoveredFields.Add(_currentField);
         }
 
@@ -430,11 +428,11 @@ namespace MowingMachine.Models
         private (bool, Field) BetterIsValidField(Offset offset)
         {
             var field = _discoveredFields
-                            .FirstOrDefault(f => f.Offset.CompareTo(new Offset(offset.X, offset.Y)))
+                            .FirstOrDefault(f => f.Offset == offset)
                         ?? _discoveredFields.SelectMany(f => f.NeighborFields)
-                            .FirstOrDefault(f => f.Offset.CompareTo(new Offset(offset.X, offset.Y)));
+                            .FirstOrDefault(f => f.Offset == offset);
             
-            var value = field?.Type  ?? FieldType.Water;
+            var value = field?.Type ?? FieldType.Water;
                 
             return ((int) value != -1 && value is not FieldType.Water, field);
         }
@@ -457,14 +455,14 @@ namespace MowingMachine.Models
             
             var tracedPath = new List<Offset>();
         
-            var currenCoordinate = goal;
-            while (visitedCoordinates.TryGetValue(currenCoordinate.ToString(), out var coord))
+            var currentCoordinate = goal;
+            while (visitedCoordinates.TryGetValue(currentCoordinate.ToString(), out var coord))
             {
                 if (coord == null)
                     break;
                 
-                tracedPath.Add(currenCoordinate);
-                currenCoordinate = coord;
+                tracedPath.Add(currentCoordinate);
+                currentCoordinate = coord;
             }
             
             return tracedPath;
@@ -494,7 +492,7 @@ namespace MowingMachine.Models
         bool IsValidField(IEnumerable<Field> fields, Offset offset)
         {
             var value = fields
-                .FirstOrDefault(f => f.Offset.CompareTo(new Offset(offset.X, offset.Y)))?.Type;
+                .FirstOrDefault(f => f.Offset == offset)?.Type;
                 
             value ??= FieldType.Water;
                 
