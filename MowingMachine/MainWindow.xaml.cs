@@ -207,7 +207,7 @@ namespace MowingMachine
 
         private void GenerateNewMap()
         {
-            const int size = 50;
+            const int size = 25;
             var rng = new Random();
             var map = MapGeneration.GenerateMapGetMap(size, rng.Next());
             
@@ -218,9 +218,9 @@ namespace MowingMachine
 
         private void AddMovement(string movement)
         {
-            _movements += $"{++_movementCount}: {movement}\n";
-            MovementsTextBox.Text = _movements;
-            MovementsTextBox.ScrollToEnd();
+            // _movements += $"{++_movementCount}: {movement}\n";
+            // MovementsTextBox.Text = _movements;
+            // MovementsTextBox.ScrollToEnd();
         }
 
         private void ShowPopup(string title, string description)
