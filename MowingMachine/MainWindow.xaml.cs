@@ -186,17 +186,6 @@ namespace MowingMachine
         private void OnResetSettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings(10, 1.2);
         private void OnSaveCurrentMapButtonClick(object sender, RoutedEventArgs e) => Constants.SaveMapAsJson(_currentMapSample);
         
-        public void Restart()
-        {
-            Console.WriteLine("Restarting...");
-            Thread.Sleep(1000);
-            OnGenerateNewMapClick(null, null);
-            Thread.Sleep(500);
-            StartSimulationClick(null, null);
-            Thread.Sleep(10);
-            StartSimulationClick(null, null);
-        }
-        
         private void OnGenerateNewMapClick(object sender, RoutedEventArgs e)
         {
             _newlyGeneratedMapSample = _currentMapSample.DeepClone();

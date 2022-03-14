@@ -153,9 +153,9 @@ namespace MowingMachine.Models
             }
         }
 
-        private IEnumerable<MowingStep> BetterCalculateStepsToGoal(MoveDirection startingDirection)
+        private IEnumerable<MowingStep> BetterCalculateStepsToGoal(MoveDirection startingDirection, Func<Field, bool> predicate)
         {
-            var path = BetterOldWay(_currentField.Offset);
+            var path = BetterOldWay(_currentField.Offset, predicate);
             
             path.Add(_currentField.Offset);
 
@@ -253,7 +253,6 @@ namespace MowingMachine.Models
         private void Complete()
         {
             Console.WriteLine("Mowing complete!");
-            _mainWindow.Restart();
         }
 
         private bool HasEnoughFuel(IEnumerable<MowingStep> stepsToNextField, IEnumerable<MowingStep> stepsToChangingStation)
@@ -299,10 +298,9 @@ namespace MowingMachine.Models
             
             if (!successful)
             {
-                Console.WriteLine("CalculateNextMove: " + ++_hereCount);
-                
-                var res = BetterCalculateStepsToGoal(_currentFacingDirection).ToList();
-                return res;
+                var steps = BetterCalculateStepsToGoal(_currentFacingDirection,
+                    f => !f.IsVisited && f.Type is not FieldType.ChargingStation);
+                return steps.ToList();
             }
             
             var nextStep = CalculateStepExpense(direction, _currentFacingDirection, _currentFieldType);
@@ -362,7 +360,7 @@ namespace MowingMachine.Models
         }
 
         // Breadth first search (bfs)
-        private List<Offset> BetterOldWay(Offset start)
+        private List<Offset> BetterOldWay(Offset start, Func<Field, bool> predicate)
         {
             var visitedCoordinates = new Dictionary<Offset, Offset>();
             var nextCoordinatesToVisit = new Queue<OffsetInfo>();
@@ -374,7 +372,7 @@ namespace MowingMachine.Models
             {
                 var cellInfo = nextCoordinatesToVisit.Dequeue();
 
-                if (BetterGetNeighborCells(visitedCoordinates, nextCoordinatesToVisit, cellInfo, out result))
+                if (BetterGetNeighborCells(visitedCoordinates, nextCoordinatesToVisit, cellInfo, predicate, out result))
                     break;
             }
 
@@ -399,6 +397,7 @@ namespace MowingMachine.Models
         private bool BetterGetNeighborCells(IDictionary<Offset, Offset> visitedCoordinates,
             Queue<OffsetInfo> nextCoordinatesToVisit,
             OffsetInfo info,
+            Func<Field, bool> predicate,
             out Offset offset)
         {
             var (isValid, field) = BetterIsValidField(info.CurrentOffset);
@@ -406,14 +405,16 @@ namespace MowingMachine.Models
             
             if (!isValid)
                 return false;
-        
+            
             // If it already exists, dont add again
             if (visitedCoordinates.ContainsKey(info.CurrentOffset))
                 return false;
         
             visitedCoordinates[info.CurrentOffset] = info.PrevOffset;
 
-            if (!field.IsVisited)
+            // Use expression here
+            if (predicate.Invoke(field))
+            // if (!field.IsVisited && field.Type is not FieldType.ChargingStation)
             {
                 offset = field.Offset;
                 return true;
