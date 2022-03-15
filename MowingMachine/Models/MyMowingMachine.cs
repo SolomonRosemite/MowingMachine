@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using MowingMachine.Common;
 
@@ -19,9 +20,11 @@ namespace MowingMachine.Models
         // Contains information about the map
         private readonly MapManager _mapManager;
 
+        private readonly Offset _offsetToChargingStation = new(0, 0);
+
         // This field preserves the most recent field the mowing machine was on. Initially it will be the charging station.
         private FieldType _currentFieldType = FieldType.ChargingStation;
-        
+
         private MoveDirection _currentFacingDirection = MoveDirection.Left;
         private Field _currentField;
 
@@ -30,12 +33,14 @@ namespace MowingMachine.Models
         private readonly double _maxChange;
         private double _charge;
         
+        private readonly Stopwatch _stopwatch = new Stopwatch();
+
         public MyMowingMachine(MapManager mapManager, double maxChange)
         {
             _mapManager = mapManager;
             _maxChange = maxChange;
             _charge = maxChange;
-            
+
             // Add initial fields
             _currentField = GetField(_mapManager.GetFieldsOfView(), new Offset(0, 0), FieldType.ChargingStation);
             _discoveredFields.Add(_currentField);
@@ -51,11 +56,13 @@ namespace MowingMachine.Models
             var neighbors = new List<Field>
             {
                 _discoveredFields.SingleOrDefault(f => f.Offset == offsetTop) ?? new Field(fov.TopCasted, offsetTop),
-                _discoveredFields.SingleOrDefault(f => f.Offset == offsetRight) ?? new Field(fov.RightCasted, offsetRight),
-                _discoveredFields.SingleOrDefault(f => f.Offset == offsetBottom) ?? new Field(fov.BottomCasted, offsetBottom),
+                _discoveredFields.SingleOrDefault(f => f.Offset == offsetRight) ??
+                new Field(fov.RightCasted, offsetRight),
+                _discoveredFields.SingleOrDefault(f => f.Offset == offsetBottom) ??
+                new Field(fov.BottomCasted, offsetBottom),
                 _discoveredFields.SingleOrDefault(f => f.Offset == offsetLeft) ?? new Field(fov.LeftCasted, offsetLeft),
             };
-            
+
             return new Field(fieldType, offset, neighbors);
         }
 
@@ -69,7 +76,7 @@ namespace MowingMachine.Models
             {
                 PerformOngoingSteps();
                 return false;
-            } 
+            }
             else if (_pathToChargingStation.Any() || _finalRunToChargingStation)
             {
                 MoveToChargingStation();
@@ -82,14 +89,21 @@ namespace MowingMachine.Models
             }
 
             var calculatedSteps = CalculateNextMove();
-            
+
             if (!calculatedSteps.Any())
             {
                 Complete();
                 return true;
             }
 
-            var stepsToChargingStation = CalculateStepsToGoal(calculatedSteps.Last().MoveDirection, new Offset(0, 0));
+            _stopwatch.Start();
+            var stepsToChargingStation =
+                CalculateStepsToGoal(calculatedSteps.Last().MoveDirection,
+                    field => field.Offset == _offsetToChargingStation);
+            _stopwatch.Stop();
+            Console.WriteLine($"Calculating Steps To Charging Station took: {_stopwatch.ElapsedTicks} ticks");
+            Console.WriteLine("---------------------------------------");
+            _stopwatch.Reset();
 
             var hasEnoughFuel = HasEnoughFuel(calculatedSteps, stepsToChargingStation);
             if (!hasEnoughFuel)
@@ -148,13 +162,19 @@ namespace MowingMachine.Models
 
         private void UpdateNeighbors()
         {
+            _stopwatch.Start();
             _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
+            _stopwatch.Stop();
+            Console.WriteLine($"Calculating UpdateNeighbors: {_stopwatch.ElapsedTicks} ticks");
+            Console.WriteLine("---------------------------------------");
+            _stopwatch.Reset();
         }
 
-        private IEnumerable<MowingStep> BetterCalculateStepsToGoal(MoveDirection startingDirection, Func<Field, bool> predicate)
+        private IEnumerable<MowingStep> CalculateStepsToGoal(MoveDirection startingDirection,
+            Func<Field, bool> predicate)
         {
-            var path = BetterOldWay(_currentField.Offset, predicate);
-            
+            var path = BreadthFirstSearch(_currentField.Offset, predicate);
+
             path.Add(_currentField.Offset);
 
             var fields = _discoveredFields.Concat(_discoveredFields.SelectMany(f => f.NeighborFields)).ToList();
@@ -176,34 +196,11 @@ namespace MowingMachine.Models
             return steps;
         }
 
-        private IEnumerable<MowingStep> CalculateStepsToGoal(MoveDirection startingDirection, Offset finalOffset)
-        {
-            var path = CalculatePathToGoal(_discoveredFields, _currentField.Offset, finalOffset);
-            
-            path.Add(_currentField.Offset);
-
-            var steps = new List<MowingStep>();
-            var currentDirection = startingDirection;
-            for (int i = path.Count - 2; i >= 0; i--)
-            {
-                var direction = path[i].Subtract(path[i + 1]).TranslateOffsetToDirection();
-
-                var step = CalculateStepExpense(direction,
-                    currentDirection,
-                    _discoveredFields.First(f => f.Offset == path[i]).Type);
-
-                currentDirection = direction;
-                steps.Add(step);
-            }
-
-            return steps;
-        }
-        
         private static MowingStep CalculateStepExpense(MoveDirection direction, MoveDirection currentFacingDirection,
             FieldType currentFieldType)
         {
             var turns = new Queue<MoveDirection>();
-            
+
             if (currentFacingDirection != direction)
                 turns = CalculateTurn(currentFacingDirection, direction, turns);
 
@@ -218,11 +215,12 @@ namespace MowingMachine.Models
 
             if (_discoveredFields.Any() && updatePrevFieldType == FieldType.ChargingStation)
                 return GetField(_mapManager.GetFieldsOfView(), newOffset, FieldType.MowedLawn);
-         
+
             return GetField(_mapManager.GetFieldsOfView(), newOffset, updatePrevFieldType);
         }
 
-        private static Queue<MoveDirection> CalculateTurn(MoveDirection direction, MoveDirection finalDirection, Queue<MoveDirection> moves)
+        private static Queue<MoveDirection> CalculateTurn(MoveDirection direction, MoveDirection finalDirection,
+            Queue<MoveDirection> moves)
         {
             if (direction == finalDirection)
                 return moves;
@@ -243,17 +241,18 @@ namespace MowingMachine.Models
                         throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
                 }
             }
-            
+
             moves.Enqueue(finalDirection);
             return moves;
         }
-        
+
         private void Complete()
         {
             Console.WriteLine("Mowing complete!");
         }
 
-        private bool HasEnoughFuel(IEnumerable<MowingStep> stepsToNextField, IEnumerable<MowingStep> stepsToChangingStation)
+        private bool HasEnoughFuel(IEnumerable<MowingStep> stepsToNextField,
+            IEnumerable<MowingStep> stepsToChangingStation)
         {
             var totalRequestEnergy = stepsToNextField
                                          .Select(s => s.TotalEnergyExpense).Sum() +
@@ -266,25 +265,26 @@ namespace MowingMachine.Models
         private void PerformStep(List<MowingStep> steps)
         {
             steps.ForEach(_mowingSteps.Enqueue);
-            
+
             var nextStep = _mowingSteps.Dequeue();
-            
+
             _currentFacingDirection = nextStep.MoveDirection;
 
             var oldOffset = _discoveredFields.Last().Offset;
             var newOffset = oldOffset.Add(new Offset(nextStep.MoveDirection));
-            
+
             _currentField = Move(nextStep, newOffset,
                 _currentFieldType is FieldType.Grass ? FieldType.MowedLawn : _currentFieldType);
-            
+
             _currentField.IsVisited = true;
 
             if (_discoveredFields.Any(f => f.Offset == _currentField.Offset))
             {
-                _discoveredFields.Move(_discoveredFields.First(f => f.Offset == _currentField.Offset), _discoveredFields.Count);
+                _discoveredFields.Move(_discoveredFields.First(f => f.Offset == _currentField.Offset),
+                    _discoveredFields.Count);
                 return;
             }
-            
+
             // Update neighbor fields
             UpdateNeighbors();
             _discoveredFields.Add(_currentField);
@@ -293,23 +293,24 @@ namespace MowingMachine.Models
         private List<MowingStep> CalculateNextMove()
         {
             var (successful, direction) = HasWalkableNeighborField(_currentField);
-            
+
             if (!successful)
             {
-                var steps = BetterCalculateStepsToGoal(_currentFacingDirection,
+                var steps = CalculateStepsToGoal(_currentFacingDirection,
                     f => !f.IsVisited && f.Type is not FieldType.ChargingStation);
                 return steps.ToList();
             }
-            
+
             var nextStep = CalculateStepExpense(direction, _currentFacingDirection, _currentFieldType);
 
-            return new List<MowingStep> { nextStep };
+            return new List<MowingStep> {nextStep};
         }
 
         private static (bool, MoveDirection) HasWalkableNeighborField(Field field)
         {
-            var fieldIndex = field.NeighborFields?.FindIndex(f => !f.IsVisited && f.CanBeWalkedOn() && f.Type is not FieldType.ChargingStation);
-                
+            var fieldIndex = field.NeighborFields?.FindIndex(f =>
+                !f.IsVisited && f.CanBeWalkedOn() && f.Type is not FieldType.ChargingStation);
+
             if (fieldIndex is null or -1)
                 return (false, MoveDirection.Bottom);
 
@@ -322,7 +323,7 @@ namespace MowingMachine.Models
                 _ => throw new Exception(),
             });
         }
-        
+
         private void MoveToChargingStation()
         {
             if (!_pathToChargingStation.Any())
@@ -331,8 +332,9 @@ namespace MowingMachine.Models
                 _currentField.Offset.UpdateOffset(new Offset(0, 0));
 
                 var offset = _discoveredFields.Last().Offset;
-                
-                var stepsToChargingStation = CalculateStepsToGoal(_currentFacingDirection, offset);
+
+                var stepsToChargingStation =
+                    CalculateStepsToGoal(_currentFacingDirection, field => field.Offset == offset);
 
                 foreach (var step in stepsToChargingStation)
                     _pathFromChargingStationToRecentPosition.Enqueue(step);
@@ -340,163 +342,111 @@ namespace MowingMachine.Models
                 _charge = _maxChange;
                 return;
             }
-            
+
             var nextStep = _pathToChargingStation.Dequeue();
 
             _finalRunToChargingStation = !_pathToChargingStation.Any();
-            
+
             _currentFacingDirection = nextStep.MoveDirection;
 
             var newOffset = _currentField.Offset.Add(new Offset(nextStep.MoveDirection));
-            
+
             _currentField = Move(nextStep, newOffset, _currentFieldType);
         }
-        
-        private List<Offset> CalculatePathToGoal(IEnumerable<Field> fields, Offset start, Offset goal)
-        {
-            return OldWay(fields, start, goal);
-        }
 
         // Breadth first search (bfs)
-        private List<Offset> BetterOldWay(Offset start, Func<Field, bool> predicate)
+        private List<Offset> BreadthFirstSearch(Offset start, Func<Field, bool> predicate)
         {
+            var lazyNeighborFields =
+                new Lazy<List<Field>>(() => _discoveredFields.SelectMany(f => f.NeighborFields).ToList());
+            
             var visitedCoordinates = new Dictionary<Offset, Offset>();
             var nextCoordinatesToVisit = new Queue<OffsetInfo>();
-            
+
             nextCoordinatesToVisit.Enqueue(new OffsetInfo(start, null));
 
-            Offset result = null;
+            (bool, Offset) result = default;
             while (nextCoordinatesToVisit.Count != 0)
             {
                 var cellInfo = nextCoordinatesToVisit.Dequeue();
 
-                if (BetterGetNeighborCells(visitedCoordinates, nextCoordinatesToVisit, cellInfo, predicate, out result))
+                result = GetNeighborCells(lazyNeighborFields, visitedCoordinates, nextCoordinatesToVisit, cellInfo, predicate);
+                
+                if (result.Item1)
                     break;
             }
 
-            if (result == null)
+            if (result.Equals(default) || !result.Item1)
                 return new List<Offset>();
-            
+
             var tracedPath = new List<Offset>();
-        
-            var currenCoordinate = result;
-            while (visitedCoordinates.TryGetValue(currenCoordinate, out var coord))
+
+            var currentCoordinate = result.Item2;
+            while (visitedCoordinates.TryGetValue(currentCoordinate, out var coord))
             {
                 if (coord == null)
                     break;
-                
-                tracedPath.Add(currenCoordinate);
-                currenCoordinate = coord;
-            }
-            
-            return tracedPath;
-        }
 
-        private bool BetterGetNeighborCells(IDictionary<Offset, Offset> visitedCoordinates,
-            Queue<OffsetInfo> nextCoordinatesToVisit,
-            OffsetInfo info,
-            Func<Field, bool> predicate,
-            out Offset offset)
-        {
-            var (isValid, field) = BetterIsValidField(info.CurrentOffset);
-            offset = null;
-            
-            if (!isValid)
-                return false;
-            
-            // If it already exists, dont add again
-            if (visitedCoordinates.ContainsKey(info.CurrentOffset))
-                return false;
-        
-            visitedCoordinates[info.CurrentOffset] = info.PrevOffset;
-
-            // Use expression here
-            if (predicate.Invoke(field))
-            // if (!field.IsVisited && field.Type is not FieldType.ChargingStation)
-            {
-                offset = field.Offset;
-                return true;
-            }
-                
-            nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X, info.CurrentOffset.Y + 1, info.CurrentOffset));
-            nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X + 1, info.CurrentOffset.Y, info.CurrentOffset));
-            nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X, info.CurrentOffset.Y - 1, info.CurrentOffset));
-            nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X - 1, info.CurrentOffset.Y, info.CurrentOffset));
-            return false;
-        }
-
-        private (bool, Field) BetterIsValidField(Offset offset)
-        {
-            var field = _discoveredFields
-                            .FirstOrDefault(f => f.Offset == offset)
-                        ?? _discoveredFields.SelectMany(f => f.NeighborFields)
-                            .FirstOrDefault(f => f.Offset == offset);
-            
-            var value = field?.Type ?? FieldType.Water;
-                
-            return ((int) value != -1 && value is not FieldType.Water, field);
-        }
-        
-        // Breadth first search (bfs)
-        private List<Offset> OldWay(IEnumerable<Field> fields, Offset start, Offset goal)
-        {
-            var visitedCoordinates = new Dictionary<string, Offset>();
-            var nextCoordinatesToVisit = new Queue<OffsetInfo>();
-            
-            nextCoordinatesToVisit.Enqueue(new OffsetInfo(start, null));
-        
-            while (nextCoordinatesToVisit.Count != 0)
-            {
-                var cellInfo = nextCoordinatesToVisit.Dequeue();
-
-                if (GetNeighborCells(cellInfo))
-                    break;
-            }
-            
-            var tracedPath = new List<Offset>();
-        
-            var currentCoordinate = goal;
-            while (visitedCoordinates.TryGetValue(currentCoordinate.ToString(), out var coord))
-            {
-                if (coord == null)
-                    break;
-                
                 tracedPath.Add(currentCoordinate);
                 currentCoordinate = coord;
             }
             
             return tracedPath;
-        
-            bool GetNeighborCells(OffsetInfo info)
-            {
-                if (!IsValidField(fields, info.CurrentOffset))
-                    return false;
-        
-                // If it already exists, dont add again
-                if (visitedCoordinates.ContainsKey(info.CurrentOffset.ToString()))
-                   return false;
-        
-                visitedCoordinates[info.CurrentOffset.ToString()] = info.PrevOffset;
-                
-                if (info.CurrentOffset.X == goal.X && info.CurrentOffset.Y == goal.Y)
-                    return true;
-                
-                nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X, info.CurrentOffset.Y + 1, info.CurrentOffset));
-                nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X + 1, info.CurrentOffset.Y, info.CurrentOffset));
-                nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X, info.CurrentOffset.Y - 1, info.CurrentOffset));
-                nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X - 1, info.CurrentOffset.Y, info.CurrentOffset));
-                return false;
-            }
         }
-        
-        bool IsValidField(IEnumerable<Field> fields, Offset offset)
+
+        private (bool, Offset) GetNeighborCells(Lazy<List<Field>> neighborFields,
+            IDictionary<Offset, Offset> visitedCoordinates,
+            Queue<OffsetInfo> nextCoordinatesToVisit,
+            OffsetInfo info,
+            Func<Field, bool> predicate)
         {
-            var value = fields
-                .FirstOrDefault(f => f.Offset == offset)?.Type;
-                
-            value ??= FieldType.Water;
-                
-            return (int) value != -1 && (FieldType) value is not FieldType.Water;
+            var (isValid, field) = IsValidField(neighborFields, info.CurrentOffset);
+
+            // If it already exists, dont add again
+            if (!isValid || visitedCoordinates.ContainsKey(info.CurrentOffset))
+                return (false, null);
+
+            visitedCoordinates[info.CurrentOffset] = info.PrevOffset;
+
+            if (predicate.Invoke(field))
+                return (true, field.Offset);
+
+            nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X, info.CurrentOffset.Y + 1,
+                info.CurrentOffset));
+            nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X + 1, info.CurrentOffset.Y,
+                info.CurrentOffset));
+            nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X, info.CurrentOffset.Y - 1,
+                info.CurrentOffset));
+            nextCoordinatesToVisit.Enqueue(new OffsetInfo(info.CurrentOffset.X - 1, info.CurrentOffset.Y,
+                info.CurrentOffset));
+            return (false, null);
+        }
+
+        private (bool, Field) IsValidField(Lazy<List<Field>> neighborFields, Offset offset)
+        {
+            Field field = null;
+            for (var i = 0; i < _discoveredFields.Count; i++)
+            {
+                if (_discoveredFields[i].Offset == offset)
+                {
+                    field = _discoveredFields[i];
+                }
+            }
+
+            if (field is null)
+            {
+                for (var i = 0; i < neighborFields.Value.Count; i++)
+                {
+                    if (neighborFields.Value[i].Offset == offset)
+                    {
+                        field = neighborFields.Value[i];
+                    }
+                }
+            }
+
+            var value = field?.Type ?? FieldType.Water;
+
+            return ((int) value != -1 && value is not FieldType.Water, field);
         }
     }
 }
