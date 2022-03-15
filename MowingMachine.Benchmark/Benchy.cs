@@ -9,8 +9,8 @@ namespace MowingMachine.Benchmark;
 [RankColumn]
 public class Benchy
 {
-    private List<Field> _fieldsAsList;
-    private IEnumerable<Field> _fieldsAsEnumerable;
+    private List<Field>? _fieldsAsList;
+    private IEnumerable<Field>? _fieldsAsEnumerable;
     
     [GlobalSetup]
     public void GlobalSetup()

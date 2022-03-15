@@ -112,5 +112,13 @@ namespace MowingMachine.Common
 
             return new MowingStep(turns, value.MoveDirection.InvertDirection(), value.FieldType, ignoreMowingExpense);
         }
+        
+        public static MowingStep Copy(this MowingStep value, bool ignoreMowingExpense)
+        {
+            var turns = new Queue<MoveDirection>();
+            value.Turns.ForEach(turns.Enqueue);
+
+            return new MowingStep(turns, value.MoveDirection, value.FieldType, ignoreMowingExpense);
+        }
     }
 }

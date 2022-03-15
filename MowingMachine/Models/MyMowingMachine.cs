@@ -20,7 +20,7 @@ namespace MowingMachine.Models
         private readonly Queue<MowingStep> _pathToChargingStation = new();
 
         // TODO: (Note) _pathToChargingStation might not be needed anymore if this works
-        private readonly Stack<MowingStep> _stepsToChargingStation = new();
+        private readonly Stack<MowingStep> _stepsRequiredToGoToChargingStation = new();
 
         // Contains information about the map
         private readonly MapManager _mapManager;
@@ -101,7 +101,7 @@ namespace MowingMachine.Models
             if (!hasEnoughFuel)
             {
                 foreach (var mowingStep in stepsToChargingStation)
-                    _pathToChargingStation.Enqueue(mowingStep);
+                    _pathToChargingStation.Enqueue(mowingStep.Copy(true));
                 
                 MoveToChargingStation();
                 return false;
@@ -198,16 +198,6 @@ namespace MowingMachine.Models
         {
             _charge -= step.TotalEnergyExpense;
 
-            if (_charge == 0)
-            {
-                Console.WriteLine("Just right");
-            }
-            else if (_charge < 0)
-            {
-                Console.WriteLine("Bad");
-                Console.WriteLine("FE was at: " + _charge);
-            }
-
             _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType, _charge);
 
             if (_discoveredFields.Any() && updatePrevFieldType == FieldType.ChargingStation)
@@ -250,36 +240,44 @@ namespace MowingMachine.Models
 
         private (bool, IEnumerable<MowingStep>) HasEnoughFuel(IEnumerable<MowingStep> stepsToNextField)
         {
-            var totalRequiredEnergy = _stepsToChargingStation
-                                          .Select(s => s.TotalEnergyExpense).Sum()
-                                      + stepsToNextField
-                                          .Select(s => s.TotalEnergyExpense).Sum();
+            foreach (var step in stepsToNextField)
+                _stepsRequiredToGoToChargingStation.Push(step.InvertMowingStep(true));
+            
+            // For some reason, the energy sometimes drops below zero. To account for this we create this buffer that will be included
+            // in the calculation. This buffer represents the worse possible move in terms of energy consumption.
+            var energyBuffer = Constants.TranslateMoveToExpense(FieldType.Sand) + 2 * Constants.TurnExpense;
 
-            var hasEnoughFuel = _charge >= totalRequiredEnergy;
+            var totalRequiredEnergy = _stepsRequiredToGoToChargingStation
+                .Select(s => s.TotalEnergyExpense).Sum();
+
+            var hasEnoughFuel = _charge - energyBuffer >= totalRequiredEnergy;
 
             if (!hasEnoughFuel)
             {
-                // TODO: When is not enough fuel based on our calculation, use bfs to check if there is a new shorter path.
+                // When is not enough fuel based on our calculation, use bfs to check if there is a new shorter path.
                 // If there is a new shorter path return true. Else return false and return back to charging station.
 
                 var stepsToChargingStation =
-                    CalculateStepsToGoal(_stepsToChargingStation.Last().MoveDirection,
+                    CalculateStepsToGoal(_stepsRequiredToGoToChargingStation.Last().MoveDirection,
                         field => field.Offset == _offsetToChargingStation);
                 
-                // We remove the steps we added before because those steps have to be included in the calculation.
-                // foreach (var _ in stepsToNextField)
-                //     _stepsToChargingStation.Pop();
-
                 totalRequiredEnergy = stepsToChargingStation
                                               .Select(s => s.TotalEnergyExpense).Sum()
                                           + stepsToNextField
                                               .Select(s => s.TotalEnergyExpense).Sum();
 
-                return (_charge >= totalRequiredEnergy, stepsToChargingStation);
+                if (_charge - energyBuffer >= totalRequiredEnergy)
+                {
+                    _stepsRequiredToGoToChargingStation.Clear();
+                    
+                    foreach (var step in stepsToChargingStation)
+                        _stepsRequiredToGoToChargingStation.Push(step.InvertMowingStep(true));
+                    
+                    return (true, null);
+                }
+                
+                return (false, stepsToChargingStation);
             }
-            
-            foreach (var step in stepsToNextField)
-                _stepsToChargingStation.Push(step.InvertMowingStep(true));
             
             return (true, null);
         }
@@ -362,6 +360,7 @@ namespace MowingMachine.Models
                     _pathFromChargingStationToRecentPosition.Enqueue(step);
 
                 _charge = _maxChange;
+                _stepsRequiredToGoToChargingStation.Clear();
                 return;
             }
 
