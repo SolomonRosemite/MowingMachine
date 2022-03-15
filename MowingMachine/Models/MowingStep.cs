@@ -5,7 +5,7 @@ namespace MowingMachine.Models
 {
     public class MowingStep
     {
-        public MowingStep(Queue<MoveDirection> turns, MoveDirection moveDirection, FieldType fieldType)
+        public MowingStep(Queue<MoveDirection> turns, MoveDirection moveDirection, FieldType fieldType, bool ignoreMowingExpense = false)
         {
             Turns = turns;
             MoveDirection = moveDirection;
@@ -13,7 +13,7 @@ namespace MowingMachine.Models
             var expense = Constants.TranslateMoveToExpense(fieldType) + turns.Count * Constants.TurnExpense;
 
             // If the field type is grass or cobble the mowing machine will mow it. Thus use more energy.
-            if (fieldType is FieldType.Grass or FieldType.CobbleStone)
+            if (!ignoreMowingExpense && fieldType is FieldType.Grass or FieldType.CobbleStone)
                 expense += 5;
             
             TotalEnergyExpense = expense;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using MoreLinq;
 using MowingMachine.Models;
 
 namespace MowingMachine.Common
@@ -102,6 +103,14 @@ namespace MowingMachine.Common
         public static int[][] DeepClone(this int[][] value)
         {
             return value.Select(a => a.ToArray()).ToArray();
+        }
+        
+        public static MowingStep InvertMowingStep(this MowingStep value, bool ignoreMowingExpense)
+        {
+            var turns = new Queue<MoveDirection>();
+            value.Turns.ForEach(turns.Enqueue);
+
+            return new MowingStep(turns, value.MoveDirection.InvertDirection(), value.FieldType, ignoreMowingExpense);
         }
     }
 }

@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using MoreLinq.Extensions;
 using MowingMachine.Common;
 
 namespace MowingMachine.Models
 {
     public class MyMowingMachine
     {
+        private readonly Offset _offsetToChargingStation = new(0, 0);
+        
         private readonly Queue<MowingStep> _mowingSteps = new();
 
         // These are going to be all the coordinates we go, to mow the grass at that coordinate.
@@ -17,10 +19,11 @@ namespace MowingMachine.Models
 
         private readonly Queue<MowingStep> _pathToChargingStation = new();
 
+        // TODO: (Note) _pathToChargingStation might not be needed anymore if this works
+        private readonly Stack<MowingStep> _stepsToChargingStation = new();
+
         // Contains information about the map
         private readonly MapManager _mapManager;
-
-        private readonly Offset _offsetToChargingStation = new(0, 0);
 
         // This field preserves the most recent field the mowing machine was on. Initially it will be the charging station.
         private FieldType _currentFieldType = FieldType.ChargingStation;
@@ -33,8 +36,6 @@ namespace MowingMachine.Models
         private readonly double _maxChange;
         private double _charge;
         
-        private readonly Stopwatch _stopwatch = new Stopwatch();
-
         public MyMowingMachine(MapManager mapManager, double maxChange)
         {
             _mapManager = mapManager;
@@ -96,16 +97,7 @@ namespace MowingMachine.Models
                 return true;
             }
 
-            _stopwatch.Start();
-            var stepsToChargingStation =
-                CalculateStepsToGoal(calculatedSteps.Last().MoveDirection,
-                    field => field.Offset == _offsetToChargingStation);
-            _stopwatch.Stop();
-            Console.WriteLine($"Calculating Steps To Charging Station took: {_stopwatch.ElapsedTicks} ticks");
-            Console.WriteLine("---------------------------------------");
-            _stopwatch.Reset();
-
-            var hasEnoughFuel = HasEnoughFuel(calculatedSteps, stepsToChargingStation);
+            var (hasEnoughFuel, stepsToChargingStation) = HasEnoughFuel(calculatedSteps);
             if (!hasEnoughFuel)
             {
                 foreach (var mowingStep in stepsToChargingStation)
@@ -162,12 +154,7 @@ namespace MowingMachine.Models
 
         private void UpdateNeighbors()
         {
-            _stopwatch.Start();
             _discoveredFields.ForEach(f => f.UpdateFieldNeighbor(_currentField));
-            _stopwatch.Stop();
-            Console.WriteLine($"Calculating UpdateNeighbors: {_stopwatch.ElapsedTicks} ticks");
-            Console.WriteLine("---------------------------------------");
-            _stopwatch.Reset();
         }
 
         private IEnumerable<MowingStep> CalculateStepsToGoal(MoveDirection startingDirection,
@@ -211,6 +198,16 @@ namespace MowingMachine.Models
         {
             _charge -= step.TotalEnergyExpense;
 
+            if (_charge == 0)
+            {
+                Console.WriteLine("Just right");
+            }
+            else if (_charge < 0)
+            {
+                Console.WriteLine("Bad");
+                Console.WriteLine("FE was at: " + _charge);
+            }
+
             _currentFieldType = _mapManager.MoveMowingMachine(step, updatePrevFieldType, _charge);
 
             if (_discoveredFields.Any() && updatePrevFieldType == FieldType.ChargingStation)
@@ -251,18 +248,43 @@ namespace MowingMachine.Models
             Console.WriteLine("Mowing complete!");
         }
 
-        private bool HasEnoughFuel(IEnumerable<MowingStep> stepsToNextField,
-            IEnumerable<MowingStep> stepsToChangingStation)
+        private (bool, IEnumerable<MowingStep>) HasEnoughFuel(IEnumerable<MowingStep> stepsToNextField)
         {
-            var totalRequestEnergy = stepsToNextField
-                                         .Select(s => s.TotalEnergyExpense).Sum() +
-                                     stepsToChangingStation
-                                         .Select(s => s.TotalEnergyExpense).Sum();
+            var totalRequiredEnergy = _stepsToChargingStation
+                                          .Select(s => s.TotalEnergyExpense).Sum()
+                                      + stepsToNextField
+                                          .Select(s => s.TotalEnergyExpense).Sum();
 
-            return _charge >= totalRequestEnergy;
+            var hasEnoughFuel = _charge >= totalRequiredEnergy;
+
+            if (!hasEnoughFuel)
+            {
+                // TODO: When is not enough fuel based on our calculation, use bfs to check if there is a new shorter path.
+                // If there is a new shorter path return true. Else return false and return back to charging station.
+
+                var stepsToChargingStation =
+                    CalculateStepsToGoal(_stepsToChargingStation.Last().MoveDirection,
+                        field => field.Offset == _offsetToChargingStation);
+                
+                // We remove the steps we added before because those steps have to be included in the calculation.
+                // foreach (var _ in stepsToNextField)
+                //     _stepsToChargingStation.Pop();
+
+                totalRequiredEnergy = stepsToChargingStation
+                                              .Select(s => s.TotalEnergyExpense).Sum()
+                                          + stepsToNextField
+                                              .Select(s => s.TotalEnergyExpense).Sum();
+
+                return (_charge >= totalRequiredEnergy, stepsToChargingStation);
+            }
+            
+            foreach (var step in stepsToNextField)
+                _stepsToChargingStation.Push(step.InvertMowingStep(true));
+            
+            return (true, null);
         }
 
-        private void PerformStep(List<MowingStep> steps)
+        private void PerformStep(IEnumerable<MowingStep> steps)
         {
             steps.ForEach(_mowingSteps.Enqueue);
 
@@ -290,7 +312,7 @@ namespace MowingMachine.Models
             _discoveredFields.Add(_currentField);
         }
 
-        private List<MowingStep> CalculateNextMove()
+        private IEnumerable<MowingStep> CalculateNextMove()
         {
             var (successful, direction) = HasWalkableNeighborField(_currentField);
 
@@ -298,7 +320,7 @@ namespace MowingMachine.Models
             {
                 var steps = CalculateStepsToGoal(_currentFacingDirection,
                     f => !f.IsVisited && f.Type is not FieldType.ChargingStation);
-                return steps.ToList();
+                return steps;
             }
 
             var nextStep = CalculateStepExpense(direction, _currentFacingDirection, _currentFieldType);
