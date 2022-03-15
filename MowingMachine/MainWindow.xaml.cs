@@ -47,7 +47,7 @@ namespace MowingMachine
             if (map is null)
                 GenerateNewMap();
                 
-            _currentMapSample = _newlyGeneratedMapSample;
+            _currentMapSample = map;
 
             var mapSample = _currentMapSample.DeepClone();
             mapSample = mapSample.Reverse().ToArray();
