@@ -4,7 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="1200">
+        MinHeight="800"
+        MinWidth="1500"
+        Title="MainWindow">
     <Grid>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -16,17 +18,22 @@
             </Frame>
 
             <Grid Grid.Column="1">
-                <StackPanel Height="100" Margin="10,10,10,0" VerticalAlignment="Top">
+                <StackPanel Height="180" Margin="10,10,10,0" VerticalAlignment="Top">
                     <Label Content="MowingMachine stats" FontSize="14" HorizontalAlignment="Center" />
 
                     <DockPanel Margin="0,10,0,0">
                         <Label Content="Battery Capacity kWh: "/>
-                        <TextBox Name="BatteryCapacityTextBox" Text="1.2" Height="20" />
+                        <TextBox Name="BatteryCapacityTextBox" Text="3" Height="20" />
                     </DockPanel>
 
                     <DockPanel Margin="0,10,0,0">
                         <Label Content="Simulation Speed (Ms per step): "/>
-                        <TextBox Name="SimulationSpeedTextBox" Text="10" Height="20" />
+                        <TextBox Name="SimulationSpeedTextBox" Text="15" Height="20" />
+                    </DockPanel>
+
+                    <DockPanel Margin="0,10,0,0">
+                        <Label Content="Simulation Size: "/>
+                        <TextBox Name="SimulationSizeTextBox" Text="20" Height="20" />
                     </DockPanel>
                 </StackPanel>
 
@@ -57,7 +64,6 @@
 
                                     <Label Name="ChargeLabel" HorizontalAlignment="Center" Content="Charge: 0%"/>
                                 </StackPanel>
-
 
                                 <StackPanel Grid.Column="1">
                                     <Grid>

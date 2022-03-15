@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Threading;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using MowingMachine.Common;
@@ -15,6 +16,7 @@ namespace MowingMachine
     public partial class MainWindow : Window
     {
         // Used to show the mowing moves
+        private readonly StringBuilder _movementStringBuilder = new();
         private string _movements = "";
         private int _movementCount;
         
@@ -24,6 +26,7 @@ namespace MowingMachine
         private int[][] _currentMapSample;
         private SampleMapPage _mapPage;
         private int _simulationSpeed;
+        private int _simulationSize;
 
         // Used to control the UI state
         private bool _clearFirst;
@@ -34,12 +37,17 @@ namespace MowingMachine
         {
             InitializeComponent();
 
-            ApplySettings(5, 1, false);
+            ApplySettings(15, 20, 3, false);
         }
 
         private void InitializeApp()
         {
-            _currentMapSample = _newlyGeneratedMapSample ?? Constants.DefaultMapSample;
+            var map = _newlyGeneratedMapSample ?? Constants.DefaultMapSample;
+            
+            if (map is null)
+                GenerateNewMap();
+                
+            _currentMapSample = _newlyGeneratedMapSample;
 
             var mapSample = _currentMapSample.DeepClone();
             mapSample = mapSample.Reverse().ToArray();
@@ -52,6 +60,8 @@ namespace MowingMachine
             _movementCount = 0; 
             SetChargeValue(0);
             SetMowedGrassValue(0);
+
+            _movementStringBuilder.Clear();
         }
 
         private double GetCount(IReadOnlyList<int[]> map, FieldType type)
@@ -95,11 +105,14 @@ namespace MowingMachine
         {
             Console.WriteLine($"Running with {_mowingMachineCharge} charge.");
             Console.WriteLine($"Running with {_simulationSpeed} ms per step. (Speed)");
+            Console.WriteLine($"Running with {_simulationSize}X{_simulationSize} map size.");
 
             UpdateUi();
             
             _interrupted = false;
             _clearFirst = true;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             while (true)
             {
                 if (_interrupted && _running)
@@ -112,7 +125,12 @@ namespace MowingMachine
                 
                 if (!_running)
                 {
-                    AddMovement("Mowing complete!");
+                    stopwatch.Stop();
+                    var mowingElapsedTime = stopwatch.Elapsed.TotalSeconds;
+                    var mowingElapsedTimeStr = $"Mowing complete and took {mowingElapsedTime} seconds!";
+
+                    Console.WriteLine(mowingElapsedTimeStr);
+                    AddMovement(mowingElapsedTimeStr);
                     UpdateUi();
                     break;
                 }
@@ -159,20 +177,22 @@ namespace MowingMachine
 
         private void ApplySettings()
         {
-            if (int.TryParse(SimulationSpeedTextBox.Text, out var simulationSpeed) && double.TryParse(BatteryCapacityTextBox.Text, out var batteryCapacity))
+            if (int.TryParse(SimulationSpeedTextBox.Text, out var simulationSpeed) && double.TryParse(BatteryCapacityTextBox.Text, out var batteryCapacity) && int.TryParse(SimulationSizeTextBox.Text, out var simulationSize))
             {
-                ApplySettings(simulationSpeed, batteryCapacity);
+                ApplySettings(simulationSpeed, simulationSize, batteryCapacity);
                 return;
             }
          
             ShowPopup("Invalid settings input", "The specified settings are not valid. Please try again.");
         }
 
-        private void ApplySettings(int simulationSpeed, double batteryCapacity, bool showDialog = true)
+        private void ApplySettings(int simulationSpeed, int simulationSize, double batteryCapacity, bool showDialog = true)
         {
+            SimulationSizeTextBox.Text = simulationSize.ToString();
             SimulationSpeedTextBox.Text = simulationSpeed.ToString();
             BatteryCapacityTextBox.Text = batteryCapacity.ToString();
-            
+
+            _simulationSize = simulationSize;
             _simulationSpeed = simulationSpeed;
             _mowingMachineCharge = batteryCapacity * 1000;
 
@@ -183,7 +203,7 @@ namespace MowingMachine
 
         private void OnApplySettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings();
 
-        private void OnResetSettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings(10, 1.2);
+        private void OnResetSettingsButtonClick(object sender, RoutedEventArgs e) => ApplySettings(15, 20, 3);
         private void OnSaveCurrentMapButtonClick(object sender, RoutedEventArgs e) => Constants.SaveMapAsJson(_currentMapSample);
         
         private void OnGenerateNewMapClick(object sender, RoutedEventArgs e)
@@ -196,7 +216,7 @@ namespace MowingMachine
 
         private void GenerateNewMap()
         {
-            const int size = 100;
+            int size = _simulationSize;
             var rng = new Random();
             var map = MapGeneration.GenerateMapGetMap(size, rng.Next());
             
@@ -205,11 +225,21 @@ namespace MowingMachine
             _newlyGeneratedMapSample = map.DeepClone();
         }
 
+        private readonly StringBuilder _movementStringBuilderForCurrent = new();
+        
         private void AddMovement(string movement)
         {
-            _movements += $"{++_movementCount}: {movement}\n";
+            _movementStringBuilderForCurrent.Append(++_movementCount);
+            _movementStringBuilderForCurrent.Append(": ");
+            _movementStringBuilderForCurrent.Append(movement);
+            
+            _movementStringBuilder.AppendLine(_movementStringBuilderForCurrent.ToString());
+            _movements = _movementStringBuilder.ToString();
+            
             MovementsTextBox.Text = _movements;
+
             MovementsTextBox.ScrollToEnd();
+            _movementStringBuilderForCurrent.Clear();
         }
 
         private void ShowPopup(string title, string description)
