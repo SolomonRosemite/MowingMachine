@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
+using System.Windows.Media.Imaging;
 using MoreLinq;
 using MowingMachine.Models;
 
@@ -19,6 +23,22 @@ namespace MowingMachine.Common
                 return -1;
 
             return map[x][y];
+        }
+
+        public static int GetFieldInverted(this int[][] map, int x, int y)
+        {
+            if (x < 0 || y < 0 || x == map.Length || y == map.Length)
+                return -1;
+
+            return map[y][x];
+        }
+
+        public static FieldType GetFieldInvertedCasted(this int[][] map, int x, int y)
+        {
+            if (x < 0 || y < 0 || x == map.Length || y == map.Length)
+                return (FieldType) (-1);
+
+            return (FieldType) map[y][x];
         }
 
         public static (int, int) GetTranslatedCoordinate(this int[][] _, int x, int y, MoveDirection direction)
@@ -65,10 +85,10 @@ namespace MowingMachine.Common
         {
             return direction switch
             {
-                MoveDirection.Top => (1, 0),
-                MoveDirection.Left => (0, -1),
-                MoveDirection.Right => (0, 1),
-                MoveDirection.Bottom => (-1, 0),
+                MoveDirection.Top => (0, -1),
+                MoveDirection.Left => (-1, 0),
+                MoveDirection.Right => (1, 0),
+                MoveDirection.Bottom => (0, 1),
             };
         }
 
@@ -119,6 +139,35 @@ namespace MowingMachine.Common
             value.Turns.ForEach(turns.Enqueue);
 
             return new MowingStep(turns, value.MoveDirection, value.FieldType, ignoreMowingExpense);
+        }
+        
+        public static BitmapImage ToBitmapImage(this Image bmp)
+        {
+            MemoryStream stream = new MemoryStream();
+            bmp.Save(stream, ImageFormat.Png);
+
+            BitmapImage bitmapImage = new BitmapImage();
+            bitmapImage.BeginInit();
+            bitmapImage.StreamSource = stream;
+            bitmapImage.EndInit();
+
+            return bitmapImage;
+        }
+        
+        public static Bitmap MergeImages(this IEnumerable<Bitmap> maps)
+        {
+            var width = maps.Max(b => b.Width);
+            var height = maps.Max(b => b.Height);
+
+            // Merge images
+            var bitmap = new Bitmap(width, height);
+            using var g = Graphics.FromImage(bitmap);
+            
+            foreach (var image in maps) {
+                g.DrawImage(image, 0, 0);
+            }
+
+            return bitmap;
         }
     }
 }

@@ -20,7 +20,7 @@ namespace MowingMachine
         private string _movements = "";
         private int _movementCount;
         
-        // map sample and mowing machine settings 
+        // Map and mowing machine configuration
         private double _mowingMachineCharge;
         private int[][] _newlyGeneratedMapSample;
         private int[][] _currentMapSample;
@@ -43,14 +43,17 @@ namespace MowingMachine
         private void InitializeApp()
         {
             var map = _newlyGeneratedMapSample ?? Constants.DefaultMapSample;
-            
+
             if (map is null)
+            {
                 GenerateNewMap();
-                
+                map = _newlyGeneratedMapSample;
+            }
+            
             _currentMapSample = map;
 
             var mapSample = _currentMapSample.DeepClone();
-            mapSample = mapSample.Reverse().ToArray();
+            mapSample = mapSample.ToArray();
 
             _mapPage = new SampleMapPage(mapSample, _mowingMachineCharge, this);
             SampleMapFrame.Content = _mapPage;

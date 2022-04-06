@@ -3,7 +3,7 @@
     public enum FieldType
     {
         Sand = 0,
-        Grass= 1,
+        Grass = 1,
         MowedLawn = 2,
         CobbleStone = 3,
         ChargingStation = 4,

@@ -12,14 +12,13 @@ namespace MowingMachine.Models
         
         private readonly Queue<MowingStep> _mowingSteps = new();
 
-        // These are going to be all the coordinates we go, to mow the grass at that coordinate.
+        // These are all the coordinates that we have visited.
         private readonly List<Field> _discoveredFields = new();
 
         private readonly Queue<MowingStep> _pathFromChargingStationToRecentPosition = new();
 
         private readonly Queue<MowingStep> _pathToChargingStation = new();
 
-        // TODO: (Note) _pathToChargingStation might not be needed anymore if this works
         private readonly Stack<MowingStep> _stepsRequiredToGoToChargingStation = new();
 
         // Contains information about the map
@@ -254,9 +253,8 @@ namespace MowingMachine.Models
 
             if (!hasEnoughFuel)
             {
-                // When is not enough fuel based on our calculation, use bfs to check if there is a new shorter path.
+                // When there is not enough fuel based on our calculation, use bfs to check if there is a new shorter path.
                 // If there is a new shorter path return true. Else return false and return back to charging station.
-
                 var stepsToChargingStation =
                     CalculateStepsToGoal(_stepsRequiredToGoToChargingStation.Last().MoveDirection,
                         field => field.Offset == _offsetToChargingStation);

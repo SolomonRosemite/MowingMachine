@@ -46,7 +46,7 @@ namespace MowingMachine
 
         private void Render(int[][] map)
         {
-            map = map.Reverse().ToArray();
+            map = map.ToArray();
             Application.Current.Dispatcher.Invoke(delegate{
                 if (_prevMapState is null)
                 {
@@ -81,11 +81,11 @@ namespace MowingMachine
 
                     SimulationGrid.Children.RemoveAt(foundFieldIndex1);
                     SimulationGrid.Children.Insert(foundFieldIndex1,
-                        Common.Common.GetUiElement(fieldType1, foundFieldIndex1 % map.Length, foundFieldIndex1 / map.Length));
+                        Common.Common.GetUiElement(map, fieldType1, foundFieldIndex1 % map.Length, foundFieldIndex1 / map.Length));
 
                     SimulationGrid.Children.RemoveAt(foundFieldIndex2);
                     SimulationGrid.Children.Insert(foundFieldIndex2,
-                        Common.Common.GetUiElement(fieldType2, foundFieldIndex2 % map.Length, foundFieldIndex2 / map.Length));
+                        Common.Common.GetUiElement(map, fieldType2, foundFieldIndex2 % map.Length, foundFieldIndex2 / map.Length));
                 }
                 
                 _prevMapState = map.DeepClone();

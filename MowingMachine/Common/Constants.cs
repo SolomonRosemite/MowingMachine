@@ -15,13 +15,13 @@ namespace MowingMachine.Common
             { FieldType.Grass, 10 },
             { FieldType.ChargingStation, 10 },
             { FieldType.MowedLawn, 10 },
-            
+
             { FieldType.CobbleStone, 5 },
             { FieldType.Sand, 20 },
         };
 
         public static double TurnExpense => 4;
-        
+
         public static double TranslateMoveToExpense(FieldType fieldType)
         {
             if (fieldType is FieldType.Water)
@@ -35,12 +35,14 @@ namespace MowingMachine.Common
 
         private static int[][] GetMapFromJson()
         {
+            Directory.CreateDirectory(@".\Maps\");
+
             try
             {
                 var json = File.ReadAllText(
-                    GetJsonFileName(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Maps\", false));
+                    GetJsonFileName(@".\Maps\", false));
 
-                Console.WriteLine(GetJsonFileName(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Maps\", false));
+                Console.WriteLine(GetJsonFileName(@".\Maps\", false));
                 return JsonSerializer.Deserialize<int[][]>(json);
             }
             catch (Exception e)
@@ -57,7 +59,7 @@ namespace MowingMachine.Common
             try
             {
                 var jsonContent = JsonSerializer.Serialize(map);
-                var fileName = GetJsonFileName(@"C:\Users\kanu-agha\RiderProjects\MowingMachine\MowingMachine\Maps\");
+                var fileName = GetJsonFileName(@".\Maps\");
 
                 File.WriteAllText(fileName, jsonContent);
             }
@@ -79,13 +81,13 @@ namespace MowingMachine.Common
             {
                 if (!mapIds.Any())
                     throw new Exception("No maps found");
-                
+
                 return path + $"Map-{mapIds.Max()}.json";
             }
-            
+
             if (!mapIds.Any())
                 return path + "Map-1.json";
-            
+
             return path + $"Map-{mapIds.Max() + 1}.json";
         }
     }

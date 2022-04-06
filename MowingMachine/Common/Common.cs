@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MowingMachine.Models;
+using Image = System.Windows.Controls.Image;
 
 namespace MowingMachine.Common
 {
@@ -29,24 +31,25 @@ namespace MowingMachine.Common
             var elements = new UIElement[(int)Math.Pow(mapSample.Length, 2)];
 
             int count = 0;
-            for (int x = 0; x < mapSample.Length; x++)
+            for (int y = 0; y < mapSample.Length; y++)
             {
-                for (int y = 0; y < mapSample.Length; y++)
+                for (int x = 0; x < mapSample.Length; x++)
                 {
-                    FieldType type = (FieldType)mapSample[x][y];
-                
-                    var element = new Button
+                    FieldType type = (FieldType)mapSample[y][x];
+                    FieldType fieldTop = mapSample.GetFieldInvertedCasted(x, y - 1);
+                    FieldType fieldBottom = mapSample.GetFieldInvertedCasted(x, y + 1);
+                    FieldType fieldLeft = mapSample.GetFieldInvertedCasted(x - 1, y);
+                    FieldType fieldRight = mapSample.GetFieldInvertedCasted(x + 1, y);
+
+                    var element = new Image
                     {
-                        Content = new Image
-                        {
-                            Source = FieldTypeToItem(type),
-                            Stretch = Stretch.Fill,
-                            Tag = type,
-                        },
+                        Source = MapUtilities.GetFieldBitmapWithTransition(type, fieldTop, fieldRight, fieldBottom, fieldLeft),
+                        Stretch = Stretch.Fill,
+                        Tag = type,
                     };
-                
-                    Grid.SetRow(element, x);
-                    Grid.SetColumn(element, y);
+                    
+                    Grid.SetRow(element, y);
+                    Grid.SetColumn(element, x);
 
                     elements[count++] = element;
                 }
@@ -55,18 +58,15 @@ namespace MowingMachine.Common
             return elements;
         }
 
-        public static UIElement GetUiElement(int fieldType, int x, int y)
+        public static UIElement GetUiElement(int[][] _, int fieldType, int x, int y)
         {
             FieldType type = (FieldType)fieldType;
-                
-            var element = new Button
+            
+            var element = new Image
             {
-                Content = new Image
-                {
-                    Source = FieldTypeToItem(type),
-                    Stretch = Stretch.Fill,
-                    Tag = type,
-                },
+                Source = MapUtilities.FieldTypeToDefaultBitmapImage(type),
+                Stretch = Stretch.Fill,
+                Tag = type,
             };
             
             Grid.SetRow(element, y);
@@ -74,30 +74,17 @@ namespace MowingMachine.Common
 
             return element;
         }
-
-        private static BitmapImage FieldTypeToItem(FieldType fieldType)
+        
+        private static void Save(BitmapSource image)
         {
-            return fieldType switch
-            {
-                FieldType.Sand => GetImage("./assets/sand.png"),
-                FieldType.Grass => GetImage("./assets/grass.png"),
-                FieldType.MowedLawn => GetImage("./assets/mowed_lawn.png"),
-                FieldType.CobbleStone => GetImage("./assets/cobblestone.png"),
-                FieldType.ChargingStation => GetImage("./assets/charging_station.png"),
-                FieldType.MowingMachine => GetImage("./assets/mowing_machine.png"),
-                FieldType.Water => GetImage("./assets/water.png"),
-                _ => throw new ArgumentOutOfRangeException(nameof(fieldType), fieldType, null),
-            };
-        }
+            var encoder = new JpegBitmapEncoder();
+            var photoId = Guid.NewGuid();
+            var photoLocation = photoId + ".png";  //file name 
 
-        private static BitmapImage GetImage(string path)
-        {
-            var uriSource = new Uri(path, UriKind.RelativeOrAbsolute);
-            var image = new BitmapImage(uriSource);
+            encoder.Frames.Add(BitmapFrame.Create(image));
 
-            if (image.Height < -1) { }
-            
-            return image;
-        }
+            using var filestream = new FileStream(photoLocation, FileMode.Create);
+            encoder.Save(filestream);
+        } 
     }
 }

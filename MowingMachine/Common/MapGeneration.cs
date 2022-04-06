@@ -1,7 +1,4 @@
-﻿using System;
-using System.Drawing;
-using System.Drawing.Imaging;
-using MowingMachine.Models;
+﻿using MowingMachine.Models;
 using SimplexNoise;
 
 namespace MowingMachine.Common

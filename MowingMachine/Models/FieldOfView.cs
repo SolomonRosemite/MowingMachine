@@ -9,9 +9,9 @@
             _fov = fov;
         }
 
-        public FieldType TopCasted => (FieldType) _fov[2][1];
+        public FieldType TopCasted => (FieldType) _fov[0][1];
         public FieldType LeftCasted => (FieldType) _fov[1][0];
         public FieldType RightCasted => (FieldType) _fov[1][2];
-        public FieldType BottomCasted => (FieldType) _fov[0][1];
+        public FieldType BottomCasted => (FieldType) _fov[2][1];
     }
 }

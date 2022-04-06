@@ -25,7 +25,7 @@ namespace MowingMachine.Models
         private readonly SampleMapPage _sampleMapPage;
         private readonly int[][] _map;
         private double _currentFuel;
-        
+
         public FieldType MoveMowingMachine(MowingStep step, FieldType previousField, double fuel)
         {
             _currentlyWorkingMowingStep = step;
@@ -33,11 +33,10 @@ namespace MowingMachine.Models
             
             var (mowingMachineX, mowingMachineY) = GetMowingMachineCoordinate();
             var (x, y) = _map.GetTranslatedCoordinate(mowingMachineX, mowingMachineY, step.MoveDirection);
+            var nextPreviousField = (FieldType) _map[y][x];
             
-            var nextPreviousField = (FieldType) _map[x][y];
-            
-            _map[mowingMachineX][mowingMachineY] = (int) previousField;
-            _map[x][y] = (int) FieldType.MowingMachine;
+            _map[mowingMachineY][mowingMachineX] = (int) previousField;
+            _map[y][x] = (int) FieldType.MowingMachine;
 
             return nextPreviousField;
         }
@@ -74,38 +73,40 @@ namespace MowingMachine.Models
             return new FieldOfView(GetFieldsAroundCoordinate(x, y));
         }
         
-        private int[][] GetFieldsAroundCoordinate(int xCoordinate, int yCoordinate)
+        private int[][] GetFieldsAroundCoordinate(int xCoord, int yCoord)
         {
-            var map = new[]
+            var map2 = new[]
             {
-                new int[3],
-                new int[3],
-                new int[3],
+                new[]
+                {
+                    _map.GetFieldInverted(xCoord - 1, yCoord - 1),
+                    _map.GetFieldInverted(xCoord, yCoord - 1),
+                    _map.GetFieldInverted(xCoord + 1, yCoord - 1),
+                },
+                new[]
+                {
+                    _map.GetFieldInverted(xCoord - 1, yCoord),
+                    _map.GetFieldInverted(xCoord, yCoord),
+                    _map.GetFieldInverted(xCoord + 1, yCoord),
+                },
+                new[]
+                {
+                    _map.GetFieldInverted(xCoord - 1, yCoord - 1),
+                    _map.GetFieldInverted(xCoord, yCoord + 1),
+                    _map.GetFieldInverted(xCoord + 1, yCoord + 1),
+                },
             };
 
-            int mapX = 0;
-            for (int x = xCoordinate - 1; x < xCoordinate + 2; x++)
-            {
-                int mapY = 0;
-
-                for (int y = yCoordinate - 1; y < yCoordinate + 2; y++)
-                {
-                    map[mapX][mapY] = _map.GetField(x, y);
-                    mapY++;
-                }
-
-                mapX++;
-            }
-            return map;
+            return map2;
         }
         
         private (int, int) GetMowingMachineCoordinate()
         {
-            for (int x = 0; x < _map.Length; x++)
+            for (int y = 0; y < _map.Length; y++)
             {
-                for (int y = 0; y < _map.Length; y++)
+                for (int x = 0; x < _map.Length; x++)
                 {
-                    FieldType type = (FieldType)_map[x][y];
+                    FieldType type = (FieldType)_map[y][x];
 
                     if (type == FieldType.MowingMachine)
                         return (x, y);
