@@ -3,7 +3,8 @@
 A simple mowing machine simulator build with C# and WPF
 
 
-https://github.com/SolomonRosemite/MowingMachine/assets/60587271/0075cf51-1d58-4437-aa10-a3c529d2fabd
+https://github.com/SolomonRosemite/MowingMachine/assets/60587271/df931a52-bc73-4467-99f1-43bc51e3e528
+
 
 
 ## Want to try it yourself?
